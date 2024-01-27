@@ -1,6 +1,9 @@
 export const STATUS_OK = "ok";
 export const STATUS_ERROR = "error";
 
+export const fiveMinutesInMillis = 300000; //5 minutes in millis
+export const oneYearInMillis = 31536000000; //1 year in millis
+
 export interface SpinderResponse<T> {
   status: string;
   data: T;

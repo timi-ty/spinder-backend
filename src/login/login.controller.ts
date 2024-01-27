@@ -4,18 +4,21 @@ import querystring from "querystring";
 import { v4 as uuidv4 } from "uuid";
 import { Request, Response, json } from "express";
 import { createFirebaseCustomToken } from "../firebase/firebase.spinder.js";
-import { requestSpotifyAuthToken } from "./login.utils.js";
+import { requestSpotifyAuthToken } from "../auth/auth.utils.js";
 import { getSpotifyProfile } from "../user/user.utils.js";
 import { UserProfileData } from "../user/user.model.js";
 import { FinalizeLoginData, FinalizeLoginResponse } from "./login.model.js";
-import { STATUS_OK, SpinderErrorResponse } from "../utils/utils.js";
+import {
+  STATUS_OK,
+  SpinderErrorResponse,
+  fiveMinutesInMillis,
+  oneYearInMillis,
+} from "../utils/utils.js";
 import {
   ERR_LOGIN_ACCESS_DENIED,
   ERR_LOGIN_FINALIZE_DENIED,
   ERR_LOGIN_OTHER_ERROR,
 } from "./login.middleware.js";
-
-const loginIdMaxAge = 300000; //5 minutes in millis
 
 //TODO: Purge this Map of stale entries at intervals.
 const spotifyLoginStates: Map<string, string> = new Map(); //This map associates 5 minute cookies to Spotify login state. When a login callback is received, the callback req MUST have a cookie that exists in this map and the content MUST be the corresponding state.
@@ -32,7 +35,10 @@ function startLoginWithSpotify(req: Request, res: Response) {
 
   if (loginId) spotifyLoginStates.delete(loginId);
 
-  res.cookie("loginId", uniqueId, { maxAge: loginIdMaxAge, httpOnly: true }); //Create a cookie with this uniqueId. Overwrite previously existing cookies to ensure that only the newest login attempt from a browser is valid.
+  res.cookie("loginId", uniqueId, {
+    maxAge: fiveMinutesInMillis,
+    httpOnly: true,
+  }); //Create a cookie with this uniqueId. Overwrite previously existing cookies to ensure that only the newest login attempt from a browser is valid.
 
   console.log(`Received login request with ID - ${uniqueId}, State - ${state}`);
 
@@ -49,7 +55,7 @@ function startLoginWithSpotify(req: Request, res: Response) {
   );
 }
 
-//Finishes the Spotify Authorization flow.
+//Finishes the Spotify Authorization flow. This is a callback touched directly by the browser so it should not send a JSON response. It redirects instead.
 async function finishLoginWithSpotify(
   req: Request,
   res: Response,
@@ -68,10 +74,14 @@ async function finishLoginWithSpotify(
       const authToken = await requestSpotifyAuthToken(code);
 
       console.log(
-        `Finished login: Token - ${authToken.token}, Expiry - ${authToken.maxAge}`
+        `Finished login: Token - ${authToken.accessToken}, Expiry - ${authToken.maxAge}`
       );
-      res.cookie("spinder_spotify_access_token", authToken.token, {
+      res.cookie("spinder_spotify_access_token", authToken.accessToken, {
         maxAge: authToken.maxAge,
+        httpOnly: true,
+      });
+      res.cookie("spinder_spotify_refresh_token", authToken.refreshToken, {
+        maxAge: oneYearInMillis,
         httpOnly: true,
       });
       res
@@ -116,7 +126,8 @@ export async function finalizeLogin(
   if (userProfile !== null) {
     try {
       const customToken: FinalizeLoginData = {
-        customToken: await createFirebaseCustomToken(userProfile.id),
+        firebaseCustomToken: await createFirebaseCustomToken(userProfile.id),
+        spotifyAccessToken: accessToken,
       };
       res
         .status(HttpStatusCode.Accepted)

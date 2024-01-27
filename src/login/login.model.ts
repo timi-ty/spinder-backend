@@ -1,7 +1,8 @@
 import { SpinderResponse } from "../utils/utils";
 
 export interface FinalizeLoginData {
-  customToken: string;
+  firebaseCustomToken: string;
+  spotifyAccessToken: string;
 }
 
 export class FinalizeLoginResponse
