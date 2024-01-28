@@ -6,7 +6,7 @@ import { Request, Response, json } from "express";
 import { createFirebaseCustomToken } from "../firebase/firebase.spinder.js";
 import { requestSpotifyAuthToken } from "../auth/auth.utils.js";
 import { getSpotifyProfile } from "../user/user.utils.js";
-import { UserProfileData } from "../user/user.model.js";
+import { SpotifyUserProfileData } from "../user/user.model.js";
 import { FinalizeLoginData, FinalizeLoginResponse } from "./login.model.js";
 import {
   STATUS_OK,
@@ -110,7 +110,7 @@ export async function finalizeLogin(
 ) {
   //This cookie is set when finishing Spotify login.
   const accessToken = req.cookies?.spinder_spotify_access_token || null;
-  var userProfile: UserProfileData | null = null;
+  var userProfile: SpotifyUserProfileData | null = null;
 
   try {
     userProfile = await getSpotifyProfile(accessToken);

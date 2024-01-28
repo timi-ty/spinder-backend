@@ -1,9 +1,5 @@
 import admin from "firebase-admin";
-import {
-  ServiceAccount,
-  applicationDefault,
-  initializeApp,
-} from "firebase-admin/app";
+import { applicationDefault, initializeApp } from "firebase-admin/app";
 import { Auth, getAuth } from "firebase-admin/auth";
 
 var defaultAuth: Auth;
@@ -35,6 +31,12 @@ export function startFirebaseApp() {
 }
 
 export async function createFirebaseCustomToken(userId: string) {
+  if (!defaultAuth) {
+    throw new Error(
+      "Failed to create custom token. Auth object does not exist. Call startFirebaseApp before calling any other functions."
+    );
+  }
+
   console.log(`Trying to sign user id - ${userId}...`);
   const customToken = await defaultAuth.createCustomToken(userId);
   console.log(`Sucessfully signed user id - ${userId}.`);

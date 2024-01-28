@@ -37,9 +37,23 @@ function catchAll(req: Request, res: Response) {
   console.log(
     `Received a request to an undefined endpoint at ${req.originalUrl}.`
   );
-  res
-    .status(HttpStatusCode.NotFound)
-    .json(new SpinderErrorResponse("not_an_api", "not_an_api"));
+  if (req.xhr) {
+    // Request made by JavaScript
+    console.log(
+      "Assuming frontend script made this request. Sending JSON response..."
+    );
+    res
+      .status(HttpStatusCode.NotFound)
+      .json(new SpinderErrorResponse("not_an_api", "not_an_api"));
+  } else {
+    // Request made by entering URL in the browser
+    console.log(
+      "Assuming the request came from entering the url in the browser. Redirecting..."
+    );
+    res
+      .status(HttpStatusCode.NotFound)
+      .redirect(`${process.env.FRONTEND_ROOT}`);
+  }
 }
 
 app.use(catchAll);
