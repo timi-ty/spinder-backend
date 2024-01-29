@@ -1,7 +1,7 @@
 import { statusOk } from "../utils/utils.js";
 import { SpotifyUserProfileData } from "./user.model.js";
 
-export async function getSpotifyProfile(
+async function getSpotifyProfile(
   accessToken: string
 ): Promise<SpotifyUserProfileData> {
   const response = await fetch("https://api.spotify.com/v1/me", {
@@ -21,3 +21,5 @@ export async function getSpotifyProfile(
     throw new Error(JSON.stringify(spotifyUserProfileData));
   }
 }
+
+export { getSpotifyProfile };

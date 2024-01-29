@@ -1,13 +1,11 @@
 import { SpinderResponse } from "../utils/utils";
 
-export interface FinalizeLoginData {
+interface FinalizeLoginData {
   firebaseCustomToken: string;
   spotifyAccessToken: string;
 }
 
-export class FinalizeLoginResponse
-  implements SpinderResponse<FinalizeLoginData>
-{
+class FinalizeLoginResponse implements SpinderResponse<FinalizeLoginData> {
   status: string;
   data: FinalizeLoginData;
 
@@ -16,3 +14,5 @@ export class FinalizeLoginResponse
     this.data = data;
   }
 }
+
+export { FinalizeLoginData, FinalizeLoginResponse };

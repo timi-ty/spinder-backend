@@ -20,7 +20,7 @@ interface Image {
   width: number;
 }
 
-export interface SpotifyUserProfileData {
+interface SpotifyUserProfileData {
   country: string;
   display_name: string;
   email: string;
@@ -35,7 +35,7 @@ export interface SpotifyUserProfileData {
   uri: string;
 }
 
-export class SpotifyUserProfileResponse
+class SpotifyUserProfileResponse
   implements SpinderResponse<SpotifyUserProfileData>
 {
   status: string;
@@ -46,3 +46,5 @@ export class SpotifyUserProfileResponse
     this.data = data;
   }
 }
+
+export { SpotifyUserProfileData, SpotifyUserProfileResponse };

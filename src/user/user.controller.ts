@@ -7,7 +7,7 @@ import { getSpotifyProfile } from "./user.utils.js";
 import { STATUS_OK, SpinderErrorResponse } from "../utils/utils.js";
 import { ERR_USER_OTHER_ERROR } from "./user.middleware.js";
 
-export async function returnSpotifyUserProfile(
+async function returnSpotifyUserProfile(
   req: Request,
   res: Response,
   next: (error: SpinderErrorResponse) => void
@@ -27,3 +27,5 @@ export async function returnSpotifyUserProfile(
     );
   }
 }
+
+export { returnSpotifyUserProfile };

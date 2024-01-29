@@ -103,7 +103,7 @@ async function finishLoginWithSpotify(
   }
 }
 
-export async function finalizeLogin(
+async function finalizeLogin(
   req: Request,
   res: Response,
   next: (error: SpinderErrorResponse) => void
@@ -150,4 +150,4 @@ export async function finalizeLogin(
   }
 }
 
-export { startLoginWithSpotify, finishLoginWithSpotify };
+export { startLoginWithSpotify, finishLoginWithSpotify, finalizeLogin };
