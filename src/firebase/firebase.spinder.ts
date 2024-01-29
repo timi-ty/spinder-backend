@@ -1,33 +1,33 @@
-import admin from "firebase-admin";
-import { applicationDefault, initializeApp } from "firebase-admin/app";
+import { applicationDefault, cert, initializeApp } from "firebase-admin/app";
 import { Auth, getAuth } from "firebase-admin/auth";
+import {
+  DocumentData,
+  Firestore,
+  getFirestore,
+} from "firebase-admin/firestore";
 
 var defaultAuth: Auth;
+var db: Firestore;
 
 function startFirebaseApp() {
   var credential = applicationDefault();
 
-  try {
-    const accountKeyJson = JSON.parse(
-      process.env.FIREBASE_SERVICE_ACCOUNT_KEY || "{}"
-    );
-    credential = admin.credential.cert(accountKeyJson);
-    console.log(
-      `Initializing firebase app with, Project ID - ${accountKeyJson.project_id}`
-    );
-  } catch (error) {
-    console.log(
-      `Failed to get Spinder Firebase App Credentials. Error - ${error}.\nUsing default app credentials...`
-    );
-  }
+  const accountKeyJson = JSON.parse(
+    process.env.FIREBASE_SERVICE_ACCOUNT_KEY || "{}"
+  );
+  credential = cert(accountKeyJson);
+  console.log(
+    `Initializing firebase app with, Project ID - ${accountKeyJson.project_id}...`
+  );
 
   const defaultAppConfig = {
     credential: credential,
   };
 
   const defaultApp = initializeApp(defaultAppConfig);
-  console.log(`Initialized firebase app ${defaultApp.name}`);
   defaultAuth = getAuth(defaultApp);
+  db = getFirestore(defaultApp);
+  console.log(`Initialized firebase app ${defaultApp.name}`);
 }
 
 async function createFirebaseCustomToken(userId: string) {
@@ -43,4 +43,46 @@ async function createFirebaseCustomToken(userId: string) {
   return customToken;
 }
 
-export { startFirebaseApp, createFirebaseCustomToken };
+async function exchangeFirebaseIdTokenForUserId(
+  idToken: string
+): Promise<string> {
+  if (!defaultAuth) {
+    throw new Error(
+      "Failed to verify id token. Auth object does not exist. Call startFirebaseApp before calling any other functions."
+    );
+  }
+
+  const decodedToken = await defaultAuth.verifyIdToken(idToken, true);
+  return decodedToken.uid;
+}
+
+async function getFirestoreDocData<T>(docPath: string): Promise<T | null> {
+  if (!db) {
+    throw new Error(
+      "Failed to get doc data. db object does not exist. Call startFirebaseApp before calling any other functions."
+    );
+  }
+
+  var docRef = db.doc(docPath);
+  const doc = await docRef.get();
+  return doc.exists ? (doc.data() as T) : null;
+}
+
+async function setFirestoreDocData(docPath: string, data: any, merge: boolean) {
+  if (!db) {
+    throw new Error(
+      "Failed to set doc data. db object does not exist. Call startFirebaseApp before calling any other functions."
+    );
+  }
+
+  const docRef = db.doc(docPath);
+  await docRef.set(data, { merge: merge });
+}
+
+export {
+  startFirebaseApp,
+  createFirebaseCustomToken,
+  getFirestoreDocData,
+  setFirestoreDocData,
+  exchangeFirebaseIdTokenForUserId,
+};

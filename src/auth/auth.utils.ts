@@ -8,7 +8,7 @@ interface AuthToken {
   refreshToken: string;
 }
 
-export async function requestSpotifyAuthToken(code: any): Promise<AuthToken> {
+async function requestSpotifyAuthToken(code: any): Promise<AuthToken> {
   var authOptions = {
     url: "https://accounts.spotify.com/api/token",
     form: {
@@ -52,7 +52,7 @@ export async function requestSpotifyAuthToken(code: any): Promise<AuthToken> {
   }
 }
 
-export async function refreshSpotifyAuthToken(
+async function refreshSpotifyAuthToken(
   refreshToken: string
 ): Promise<AuthToken> {
   try {
@@ -96,3 +96,5 @@ export async function refreshSpotifyAuthToken(
     throw new Error(`Auth refresh request failed. ${err}`);
   }
 }
+
+export { requestSpotifyAuthToken, refreshSpotifyAuthToken };

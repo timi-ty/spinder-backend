@@ -9,7 +9,7 @@ function loginRequestLogger(req: Request, res: Response, next: () => void) {
 
 const ERR_LOGIN_ACCESS_DENIED = "login_access_denied"; //Spotify login access denied.
 const ERR_LOGIN_FINALIZE_DENIED = "login_finalize_denied"; //Failed to send custom sign in token.
-const ERR_LOGIN_OTHER_ERROR = "login_other_error"; //Failed to send custom sign in token.
+const ERR_LOGIN_OTHER_ERROR = "login_other_error";
 
 function loginErrorHandler(
   err: SpinderErrorResponse,

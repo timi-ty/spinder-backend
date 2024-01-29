@@ -1,5 +1,13 @@
+import {
+  getFirestoreDocData,
+  setFirestoreDocData,
+} from "../firebase/firebase.spinder.js";
 import { statusOk } from "../utils/utils.js";
-import { SpotifyUserProfileData } from "./user.model.js";
+import {
+  SpinderUserData,
+  SpotifyUserProfileData,
+  defaultSpinderUserData,
+} from "./user.model.js";
 
 async function getSpotifyProfile(
   accessToken: string
@@ -22,4 +30,20 @@ async function getSpotifyProfile(
   }
 }
 
-export { getSpotifyProfile };
+async function getOrCreateSpinderUserData(
+  userId: string
+): Promise<SpinderUserData> {
+  var spinderUserData = await getFirestoreDocData<SpinderUserData>(
+    `users/${userId}`
+  );
+
+  if (spinderUserData === null) {
+    await setFirestoreDocData(`users/${userId}`, defaultSpinderUserData, true);
+
+    return defaultSpinderUserData;
+  } else {
+    return spinderUserData;
+  }
+}
+
+export { getSpotifyProfile, getOrCreateSpinderUserData };

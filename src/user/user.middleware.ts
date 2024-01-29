@@ -7,7 +7,7 @@ function userRequestLogger(req: Request, res: Response, next: () => void) {
   next();
 }
 
-const ERR_USER_OTHER_ERROR = "user_other_error"; //Failed to send custom sign in token.
+const ERR_USER_OTHER_ERROR = "user_other_error";
 
 function userErrorHandler(
   err: SpinderErrorResponse,

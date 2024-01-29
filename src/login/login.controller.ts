@@ -3,10 +3,16 @@ import randomstring from "randomstring";
 import querystring from "querystring";
 import { v4 as uuidv4 } from "uuid";
 import { Request, Response, json } from "express";
-import { createFirebaseCustomToken } from "../firebase/firebase.spinder.js";
+import {
+  createFirebaseCustomToken,
+  setFirestoreDocData,
+} from "../firebase/firebase.spinder.js";
 import { requestSpotifyAuthToken } from "../auth/auth.utils.js";
 import { getSpotifyProfile } from "../user/user.utils.js";
-import { SpotifyUserProfileData } from "../user/user.model.js";
+import {
+  SpotifyUserProfileData,
+  defaultSpinderUserData,
+} from "../user/user.model.js";
 import { FinalizeLoginData, FinalizeLoginResponse } from "./login.model.js";
 import {
   STATUS_OK,
@@ -129,14 +135,19 @@ async function finalizeLogin(
         firebaseCustomToken: await createFirebaseCustomToken(userProfile.id),
         spotifyAccessToken: accessToken,
       };
+      setFirestoreDocData(
+        `users/${userProfile.id}`,
+        defaultSpinderUserData,
+        true
+      );
       res
-        .status(HttpStatusCode.Accepted)
+        .status(HttpStatusCode.Ok)
         .json(new FinalizeLoginResponse(STATUS_OK, customToken));
     } catch (err) {
       next(
         new SpinderErrorResponse(
           ERR_LOGIN_FINALIZE_DENIED,
-          `Failed to create custom token. ${err}`
+          `Failed to finalize login with firebase. ${err}`
         )
       );
     }

@@ -2,11 +2,17 @@ import express, { Request, Response } from "express";
 import env from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import { HttpStatusCode } from "axios";
+import { startFirebaseApp } from "./firebase/firebase.spinder.js";
 import { addLoginRouter, assembleLoginRouter } from "./login/login.router.js";
 import { addUserRouter, assembleUserRouter } from "./user/user.router.js";
-import { HttpStatusCode } from "axios";
+import {
+  assembleDiscoverRouter,
+  addDiscoverRouter,
+} from "./discover/discover.router.js";
 import { SpinderErrorResponse } from "./utils/utils.js";
-import { startFirebaseApp } from "./firebase/firebase.spinder.js";
+
+//TODO: console.log every error that you catch in a try/catch block and forward just a descriptive string message of the error source to the error handler middleware.
 
 env.config();
 
@@ -32,6 +38,11 @@ addLoginRouter(app);
 assembleUserRouter(express.Router());
 addUserRouter(app);
 /**********User End************/
+
+/**********Discover Start**********/
+assembleDiscoverRouter(express.Router());
+addDiscoverRouter(app);
+/**********Discover End************/
 
 function catchAll(req: Request, res: Response) {
   console.log(

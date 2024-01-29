@@ -6,6 +6,7 @@ import {
 import { getSpotifyProfile } from "./user.utils.js";
 import { STATUS_OK, SpinderErrorResponse } from "../utils/utils.js";
 import { ERR_USER_OTHER_ERROR } from "./user.middleware.js";
+import { HttpStatusCode } from "axios";
 
 async function returnSpotifyUserProfile(
   req: Request,
@@ -17,7 +18,9 @@ async function returnSpotifyUserProfile(
 
   try {
     userProfile = await getSpotifyProfile(accessToken);
-    res.json(new SpotifyUserProfileResponse(STATUS_OK, userProfile));
+    res
+      .status(HttpStatusCode.Ok)
+      .json(new SpotifyUserProfileResponse(STATUS_OK, userProfile));
   } catch (err) {
     next(
       new SpinderErrorResponse(

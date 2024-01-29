@@ -47,4 +47,17 @@ class SpotifyUserProfileResponse
   }
 }
 
-export { SpotifyUserProfileData, SpotifyUserProfileResponse };
+interface SpinderUserData {
+  selectedDiscoverSourceType: number;
+}
+
+const defaultSpinderUserData: SpinderUserData = {
+  selectedDiscoverSourceType: 0,
+};
+
+export {
+  SpotifyUserProfileData,
+  SpotifyUserProfileResponse,
+  SpinderUserData,
+  defaultSpinderUserData,
+};
