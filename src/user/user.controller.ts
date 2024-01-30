@@ -15,7 +15,7 @@ async function returnSpotifyUserProfile(
     userProfile = await getSpotifyProfile(accessToken);
     okResponse(req, res, userProfile);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     next(
       new SpinderError(
         HttpStatusCode.InternalServerError,

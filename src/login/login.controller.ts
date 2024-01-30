@@ -83,7 +83,7 @@ async function finishLoginWithSpotify(
       );
       okRedirect(req, res, process.env.FRONTEND_ROOT || "");
     } catch (error) {
-      console.log(error);
+      console.error(error);
       next(
         new SpinderError(
           HttpStatusCode.SeeOther,
@@ -111,7 +111,7 @@ async function finalizeLogin(
   try {
     userProfile = await getSpotifyProfile(accessToken);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     next(
       new SpinderError(
         HttpStatusCode.InternalServerError,
@@ -133,7 +133,7 @@ async function finalizeLogin(
     );
     okResponse(req, res, customToken);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     next(
       new SpinderError(
         HttpStatusCode.InternalServerError,

@@ -1,10 +1,6 @@
 import { applicationDefault, cert, initializeApp } from "firebase-admin/app";
 import { Auth, getAuth } from "firebase-admin/auth";
-import {
-  DocumentData,
-  Firestore,
-  getFirestore,
-} from "firebase-admin/firestore";
+import { Firestore, getFirestore } from "firebase-admin/firestore";
 
 var defaultAuth: Auth;
 var db: Firestore;

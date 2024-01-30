@@ -7,7 +7,7 @@ function userRequestLogger(req: Request, res: Response, next: () => void) {
 }
 
 function userErrorHandler(error: SpinderError, req: Request, res: Response) {
-  console.log(`User Error at ${req.originalUrl} - ${error.message}.`);
+  console.error(`User Error at ${req.originalUrl} - ${error.message}.`);
   res.status(error.status).json(error);
 }
 

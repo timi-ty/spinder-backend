@@ -8,7 +8,7 @@ function loginRequestLogger(req: Request, res: Response, next: () => void) {
 }
 
 function loginErrorHandler(error: SpinderError, req: Request, res: Response) {
-  console.log(`Login Error at ${req.originalUrl} - ${error.message}.`);
+  console.error(`Login Error at ${req.originalUrl} - ${error.message}.`);
 
   if (error.status === HttpStatusCode.SeeOther) {
     //This error comes from a redirect and cannot be relayed in JSON. Find another way to communicate this error to the frontend.

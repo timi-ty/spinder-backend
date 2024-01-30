@@ -40,7 +40,7 @@ async function getDiscoverSourceTypes(
       spinderUserData.selectedDiscoverSourceType;
     okResponse(req, res, discoverSourceTypesData);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     next(
       new SpinderError(
         HttpStatusCode.InternalServerError,

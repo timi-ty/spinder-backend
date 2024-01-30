@@ -11,7 +11,7 @@ function discoverErrorHandler(
   req: Request,
   res: Response
 ) {
-  console.log(`Discover Error at ${req.originalUrl} - ${error.message}.`);
+  console.error(`Discover Error at ${req.originalUrl} - ${error.message}.`);
   res.status(error.status).json(error);
 }
 
