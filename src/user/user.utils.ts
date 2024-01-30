@@ -8,7 +8,7 @@ import {
   SpotifyUserProfileData,
   defaultSpinderUserData,
 } from "./user.model.js";
-import { SpinderError, SpotifyErrorResponse } from "../utils/utils.js";
+import { SpotifyErrorResponse } from "../utils/utils.js";
 
 async function getSpotifyProfile(
   accessToken: string
@@ -25,7 +25,9 @@ async function getSpotifyProfile(
     return spotifyUserProfileData;
   } else {
     const spotifyErrorResponse: SpotifyErrorResponse = await response.json();
-    throw new SpinderError(response.status, spotifyErrorResponse.error.message);
+    throw new Error(
+      `Status: ${spotifyErrorResponse.error.status}, Message: ${spotifyErrorResponse.error.message}`
+    );
   }
 }
 

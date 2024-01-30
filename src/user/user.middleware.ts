@@ -6,9 +6,14 @@ function userRequestLogger(req: Request, res: Response, next: () => void) {
   next();
 }
 
-function userErrorHandler(error: SpinderError, req: Request, res: Response) {
-  console.error(`User Error at ${req.originalUrl} - ${error.message}.`);
-  res.status(error.status).json(error);
+function userErrorHandler(
+  err: SpinderError,
+  req: Request,
+  res: Response,
+  next: any
+) {
+  console.error(`User Error at ${req.originalUrl} - ${err.message}.`);
+  res.status(err.status).json(err);
 }
 
 export { userRequestLogger, userErrorHandler };

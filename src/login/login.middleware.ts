@@ -7,19 +7,22 @@ function loginRequestLogger(req: Request, res: Response, next: () => void) {
   next();
 }
 
-function loginErrorHandler(error: SpinderError, req: Request, res: Response) {
-  console.error(`Login Error at ${req.originalUrl} - ${error.message}.`);
+function loginErrorHandler(
+  err: SpinderError,
+  req: Request,
+  res: Response,
+  next: any
+) {
+  console.error(`Login Error at ${req.originalUrl} - ${err.message}.`);
 
-  if (error.status === HttpStatusCode.SeeOther) {
-    //This error comes from a redirect and cannot be relayed in JSON. Find another way to communicate this error to the frontend.
-    res
-      .status(HttpStatusCode.BadRequest)
-      .redirect(`${process.env.FRONTEND_ROOT}`);
+  if (!req.xhr) {
+    //This request came straight form the browser and should not receive a JSON response. Find another way to communicate this error to the frontend.
+    res.status(err.status).redirect(`${process.env.FRONTEND_ROOT}`);
     return;
   }
 
   //Send error response to let the frontend know that the login process must be restarted.
-  res.status(HttpStatusCode.BadRequest).json(error);
+  res.status(err.status).json(err);
 }
 
 export { loginRequestLogger, loginErrorHandler };

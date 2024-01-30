@@ -63,7 +63,7 @@ async function finishLoginWithSpotify(
 ) {
   const code = req.query.code || null;
   const state = req.query.state || null;
-  const loginId = req.cookies?.loginId || null;
+  const loginId = req.cookies.loginId || null;
   const confirmState = loginId ? spotifyLoginStates.get(loginId) : null;
   const acceptRequest = code && state && confirmState && state === confirmState;
 
@@ -86,7 +86,7 @@ async function finishLoginWithSpotify(
       console.error(error);
       next(
         new SpinderError(
-          HttpStatusCode.SeeOther,
+          HttpStatusCode.InternalServerError,
           "Failed to get spotify access token."
         )
       );
@@ -95,7 +95,10 @@ async function finishLoginWithSpotify(
     const errorMessage = req.query.error
       ? "User denied spotify access."
       : "Spinder rejected authentication request.";
-    next(new SpinderError(HttpStatusCode.SeeOther, errorMessage));
+    const status = req.query.error
+      ? HttpStatusCode.BadRequest
+      : HttpStatusCode.InternalServerError;
+    next(new SpinderError(status, errorMessage));
   }
 }
 
@@ -115,7 +118,7 @@ async function finalizeLogin(
     next(
       new SpinderError(
         HttpStatusCode.InternalServerError,
-        `Failed to get user's Spotify profile data with, Access Token: ${accessToken}.`
+        `Failed to get user's Spotify profile data with, Access token: ${accessToken}.`
       )
     );
     return;
@@ -137,7 +140,7 @@ async function finalizeLogin(
     next(
       new SpinderError(
         HttpStatusCode.InternalServerError,
-        `Failed to finalize login with firebase for user with, ID: ${userProfile.id}.`
+        `Failed to finalize login with firebase for user with, Id: ${userProfile.id}.`
       )
     );
   }

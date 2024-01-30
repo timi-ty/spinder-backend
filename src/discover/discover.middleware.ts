@@ -7,12 +7,13 @@ function discoverRequestLogger(req: Request, res: Response, next: () => void) {
 }
 
 function discoverErrorHandler(
-  error: SpinderError,
+  err: SpinderError,
   req: Request,
-  res: Response
+  res: Response,
+  next: any
 ) {
-  console.error(`Discover Error at ${req.originalUrl} - ${error.message}.`);
-  res.status(error.status).json(error);
+  console.error(`Discover Error at ${req.originalUrl} - ${err.message}.`);
+  res.status(err.status).json(err);
 }
 
 export { discoverRequestLogger, discoverErrorHandler };

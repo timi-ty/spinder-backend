@@ -1,8 +1,7 @@
-import express, { Request, Response } from "express";
+import express from "express";
 import env from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { HttpStatusCode } from "axios";
 import { startFirebaseApp } from "./firebase/firebase.spinder.js";
 import { addLoginRouter, assembleLoginRouter } from "./login/login.router.js";
 import { addUserRouter, assembleUserRouter } from "./user/user.router.js";
@@ -10,7 +9,11 @@ import {
   assembleDiscoverRouter,
   addDiscoverRouter,
 } from "./discover/discover.router.js";
-import { SpinderError } from "./utils/utils.js";
+import {
+  catchError,
+  catchUndefined,
+  interceptRequestMismatch,
+} from "./app.middleware.js";
 
 //TODO: console.log every error that you catch in a try/catch block and forward just a descriptive string message of the error source to the error handler middleware.
 
@@ -29,6 +32,8 @@ app.use(
 startFirebaseApp();
 /**********Firebase End************/
 
+app.use(interceptRequestMismatch);
+
 /**********Login Start**********/
 assembleLoginRouter(express.Router());
 addLoginRouter(app);
@@ -44,35 +49,8 @@ assembleDiscoverRouter(express.Router());
 addDiscoverRouter(app);
 /**********Discover End************/
 
-function catchAll(req: Request, res: Response) {
-  console.log(
-    `Received a request to an undefined endpoint at ${req.originalUrl}.`
-  );
-  if (req.xhr) {
-    // Request made by JavaScript
-    console.log(
-      "Assuming frontend script made this request. Sending JSON response..."
-    );
-    res
-      .status(HttpStatusCode.NotFound)
-      .json(
-        new SpinderError(
-          HttpStatusCode.NotFound,
-          `${req.originalUrl} is not an api endpoint.`
-        )
-      );
-  } else {
-    // Request made by entering URL in the browser
-    console.log(
-      "Assuming the request came from entering the url in the browser. Redirecting..."
-    );
-    res
-      .status(HttpStatusCode.NotFound)
-      .redirect(`${process.env.FRONTEND_ROOT}`);
-  }
-}
-
-app.use(catchAll);
+app.use(catchUndefined);
+app.use(catchError);
 
 app.listen(process.env.PORT, () => {
   console.log(`Spinder app listening on port ${process.env.PORT}`);

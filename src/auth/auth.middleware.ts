@@ -34,7 +34,7 @@ async function ensureSpotifyAccessToken(
       );
       next();
     } catch (error) {
-      console.log(error);
+      console.error(error);
       next(
         new SpinderError(
           HttpStatusCode.Unauthorized,
@@ -57,7 +57,7 @@ async function ensureFirebaseAuthenticatedUser(
   res: Response,
   next: any
 ) {
-  const authorization = req.headers?.authorization || null;
+  const authorization = req.headers.authorization || null;
   const authorizationContent = authorization ? authorization.split(" ") : null;
   const idToken =
     authorizationContent &&
@@ -75,7 +75,7 @@ async function ensureFirebaseAuthenticatedUser(
       );
       next(); //User is authenticated, continue to the next handler.
     } catch (error) {
-      console.log(error);
+      console.error(error);
       next(
         new SpinderError(
           HttpStatusCode.Unauthorized,
