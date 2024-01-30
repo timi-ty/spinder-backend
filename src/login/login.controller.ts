@@ -90,6 +90,9 @@ async function finishLoginWithSpotify(
         maxAge: oneYearInMillis,
         httpOnly: true,
       });
+      console.log(
+        `Responding to request at ${req.originalUrl} with a redirect to: ${process.env.FRONTEND_ROOT}`
+      );
       res
         .status(HttpStatusCode.SeeOther)
         .redirect(`${process.env.FRONTEND_ROOT}`);
@@ -139,6 +142,11 @@ async function finalizeLogin(
         `users/${userProfile.id}`,
         defaultSpinderUserData,
         true
+      );
+      console.log(
+        `Responding to request at ${req.originalUrl} with: ${JSON.stringify(
+          customToken
+        )}`
       );
       res
         .status(HttpStatusCode.Ok)

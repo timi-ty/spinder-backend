@@ -61,8 +61,12 @@ async function ensureFirebaseAuthenticatedUser(
 
   if (idToken) {
     try {
-      const userId = exchangeFirebaseIdTokenForUserId(idToken);
+      const userId = await exchangeFirebaseIdTokenForUserId(idToken);
       req.cookies.userId = userId;
+      console.log(
+        `Ensured that the user with id: ${req.cookies.userId} is authorized.`
+      );
+      next(); //User is authenticated, continue to the next handler.
     } catch (error: any) {
       next(new SpinderErrorResponse(ERR_AUTH_ERROR, error));
     }

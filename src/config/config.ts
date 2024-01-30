@@ -9,7 +9,13 @@ enum DISCOVER_SOURCE_TYPES {
 }
 
 const config: Config = {
-  discover_source_types: ["Anything Me, Following, Playlist, Artiste, Keyword"],
+  discover_source_types: [
+    "Anything Me",
+    "Following",
+    "Playlist",
+    "Artiste",
+    "Keyword",
+  ],
 };
 
 export default config;

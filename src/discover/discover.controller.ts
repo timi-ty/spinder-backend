@@ -47,6 +47,11 @@ async function getDiscoverSourceTypes(
     discoverSourceTypesData.sourceTypes = config.discover_source_types;
     discoverSourceTypesData.selectedSourceType =
       spinderUserData.selectedDiscoverSourceType;
+    console.log(
+      `Responding to request at ${req.originalUrl} with: ${JSON.stringify(
+        discoverSourceTypesData
+      )}`
+    );
     res
       .status(HttpStatusCode.Ok)
       .json(

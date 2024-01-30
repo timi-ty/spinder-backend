@@ -18,6 +18,11 @@ async function returnSpotifyUserProfile(
 
   try {
     userProfile = await getSpotifyProfile(accessToken);
+    console.log(
+      `Responding to request at ${req.originalUrl} with: ${JSON.stringify(
+        userProfile
+      )}`
+    );
     res
       .status(HttpStatusCode.Ok)
       .json(new SpotifyUserProfileResponse(STATUS_OK, userProfile));
