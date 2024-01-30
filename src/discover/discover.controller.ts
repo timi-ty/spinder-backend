@@ -1,16 +1,7 @@
 import { Request, Response } from "express";
 import config from "../config/config.js";
-import {
-  getFirestoreDocData,
-  setFirestoreDocData,
-} from "../firebase/firebase.spinder.js";
-import { STATUS_OK, SpinderErrorResponse } from "../utils/utils.js";
-import {
-  DiscoverSourceTypesData,
-  DiscoverSourceTypesResponse,
-} from "./discover.model.js";
-import { SpinderUserData, defaultSpinderUserData } from "../user/user.model.js";
-import { ERR_DISCOVER_OTHER_ERROR } from "./discover.middleware.js";
+import { SpinderError, okResponse } from "../utils/utils.js";
+import { DiscoverSourceTypesData } from "./discover.model.js";
 import { HttpStatusCode } from "axios";
 import { getOrCreateSpinderUserData } from "../user/user.utils.js";
 
@@ -18,21 +9,21 @@ import { getOrCreateSpinderUserData } from "../user/user.utils.js";
 async function getDiscoverDestinations(
   req: Request,
   res: Response,
-  next: (error: SpinderErrorResponse) => void
+  next: (error: SpinderError) => void
 ) {}
 
 //Search the list of currently allowed discover destinations.
 async function searchDiscoverDestinations(
   req: Request,
   res: Response,
-  next: (error: SpinderErrorResponse) => void
+  next: (error: SpinderError) => void
 ) {}
 
 //Get the list of currently allowed discover source types from the Spinder App Database. The user's source type selection should be marked in the response.
 async function getDiscoverSourceTypes(
   req: Request,
   res: Response,
-  next: (error: SpinderErrorResponse) => void
+  next: (error: SpinderError) => void
 ) {
   try {
     const spinderUserData = await getOrCreateSpinderUserData(
@@ -47,21 +38,13 @@ async function getDiscoverSourceTypes(
     discoverSourceTypesData.sourceTypes = config.discover_source_types;
     discoverSourceTypesData.selectedSourceType =
       spinderUserData.selectedDiscoverSourceType;
-    console.log(
-      `Responding to request at ${req.originalUrl} with: ${JSON.stringify(
-        discoverSourceTypesData
-      )}`
-    );
-    res
-      .status(HttpStatusCode.Ok)
-      .json(
-        new DiscoverSourceTypesResponse(STATUS_OK, discoverSourceTypesData)
-      );
+    okResponse(req, res, discoverSourceTypesData);
   } catch (error) {
+    console.log(error);
     next(
-      new SpinderErrorResponse(
-        ERR_DISCOVER_OTHER_ERROR,
-        `Failed to assemble reponse. This is most likely a db query failure. ${error}`
+      new SpinderError(
+        HttpStatusCode.InternalServerError,
+        "Failed to assemble reponse. This is most likely a db query failure."
       )
     );
   }
@@ -71,7 +54,7 @@ async function getDiscoverSourceTypes(
 async function searchDiscoverSources(
   req: Request,
   res: Response,
-  next: (error: SpinderErrorResponse) => void
+  next: (error: SpinderError) => void
 ) {}
 
 export {

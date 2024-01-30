@@ -1,5 +1,3 @@
-import { SpinderResponse } from "../utils/utils.js";
-
 interface ExplicitContent {
   filter_enabled: boolean;
   filter_locked: boolean;
@@ -35,18 +33,6 @@ interface SpotifyUserProfileData {
   uri: string;
 }
 
-class SpotifyUserProfileResponse
-  implements SpinderResponse<SpotifyUserProfileData>
-{
-  status: string;
-  data: SpotifyUserProfileData;
-
-  constructor(status: string, data: SpotifyUserProfileData) {
-    this.status = status;
-    this.data = data;
-  }
-}
-
 interface SpinderUserData {
   selectedDiscoverSourceType: number;
 }
@@ -55,9 +41,4 @@ const defaultSpinderUserData: SpinderUserData = {
   selectedDiscoverSourceType: 0,
 };
 
-export {
-  SpotifyUserProfileData,
-  SpotifyUserProfileResponse,
-  SpinderUserData,
-  defaultSpinderUserData,
-};
+export { SpotifyUserProfileData, SpinderUserData, defaultSpinderUserData };

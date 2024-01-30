@@ -1,6 +1,4 @@
-import axios from "axios";
-import { statusOk } from "../utils/utils.js";
-import { response } from "express";
+import axios, { HttpStatusCode } from "axios";
 
 interface AuthToken {
   accessToken: string;
@@ -34,7 +32,7 @@ async function requestSpotifyAuthToken(code: any): Promise<AuthToken> {
       headers: authOptions.headers,
     });
 
-    if (statusOk(response.status)) {
+    if (response.status === HttpStatusCode.Ok) {
       return {
         accessToken: response.data.access_token,
         maxAge: response.data.expires_in * 1000, //Spotify gives expiry in seconds. Convert to milliseconds.
@@ -42,13 +40,12 @@ async function requestSpotifyAuthToken(code: any): Promise<AuthToken> {
       };
     } else {
       throw new Error(
-        `Spotify rejected login - Status: ${
-          response.status
-        }, Message - ${JSON.stringify(response.data)}`
+        `Spotify rejected login - Status: ${response.status}, Message - ${response.data.error.message}`
       );
     }
-  } catch (err) {
-    throw new Error(`Auth request failed. ${err}`);
+  } catch (error) {
+    console.log(error);
+    throw new Error("Auth request failed.");
   }
 }
 
@@ -58,6 +55,10 @@ async function refreshSpotifyAuthToken(
   try {
     var authOptions = {
       url: "https://accounts.spotify.com/api/token",
+      form: {
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+      },
       headers: {
         "content-type": "application/x-www-form-urlencoded",
         Authorization:
@@ -68,10 +69,6 @@ async function refreshSpotifyAuthToken(
               process.env.SPOTIFY_CLIENT_SECRET
           ).toString("base64"),
       },
-      form: {
-        grant_type: "refresh_token",
-        refresh_token: refreshToken,
-      },
       json: true,
     };
 
@@ -79,7 +76,7 @@ async function refreshSpotifyAuthToken(
       headers: authOptions.headers,
     });
 
-    if (statusOk(response.status)) {
+    if (response.status === HttpStatusCode.Ok) {
       return {
         accessToken: response.data.access_token,
         maxAge: response.data.expires_in * 1000, //Spotify gives expiry in seconds. Convert to milliseconds.
@@ -87,13 +84,12 @@ async function refreshSpotifyAuthToken(
       };
     } else {
       throw new Error(
-        `Spotify rejected refresh login - Status: ${
-          response.status
-        }, Message - ${JSON.stringify(response.data)}`
+        `Spotify rejected refresh login - Status: ${response.status}, Message - ${response.data.error.message}`
       );
     }
-  } catch (err) {
-    throw new Error(`Auth refresh request failed. ${err}`);
+  } catch (error) {
+    console.log(error);
+    throw new Error("Refresh auth request failed.");
   }
 }
 

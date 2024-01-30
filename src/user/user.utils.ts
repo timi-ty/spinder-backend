@@ -1,13 +1,14 @@
+import { HttpStatusCode } from "axios";
 import {
   getFirestoreDocData,
   setFirestoreDocData,
 } from "../firebase/firebase.spinder.js";
-import { statusOk } from "../utils/utils.js";
 import {
   SpinderUserData,
   SpotifyUserProfileData,
   defaultSpinderUserData,
 } from "./user.model.js";
+import { SpinderError, SpotifyErrorResponse } from "../utils/utils.js";
 
 async function getSpotifyProfile(
   accessToken: string
@@ -18,15 +19,13 @@ async function getSpotifyProfile(
     },
   });
 
-  const spotifyUserProfileData: SpotifyUserProfileData = await response.json();
-
-  if (statusOk(response.status)) {
-    console.log(
-      `Got Spotify profile, Name - ${spotifyUserProfileData.display_name}, Email - ${spotifyUserProfileData.email}`
-    );
+  if (response.status === HttpStatusCode.Ok) {
+    const spotifyUserProfileData: SpotifyUserProfileData =
+      await response.json();
     return spotifyUserProfileData;
   } else {
-    throw new Error(JSON.stringify(spotifyUserProfileData));
+    const spotifyErrorResponse: SpotifyErrorResponse = await response.json();
+    throw new SpinderError(response.status, spotifyErrorResponse.error.message);
   }
 }
 
@@ -39,7 +38,6 @@ async function getOrCreateSpinderUserData(
 
   if (spinderUserData === null) {
     await setFirestoreDocData(`users/${userId}`, defaultSpinderUserData, true);
-
     return defaultSpinderUserData;
   } else {
     return spinderUserData;

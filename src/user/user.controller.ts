@@ -1,36 +1,25 @@
 import { Request, Response } from "express";
-import {
-  SpotifyUserProfileResponse,
-  SpotifyUserProfileData,
-} from "./user.model.js";
+import { SpotifyUserProfileData } from "./user.model.js";
 import { getSpotifyProfile } from "./user.utils.js";
-import { STATUS_OK, SpinderErrorResponse } from "../utils/utils.js";
-import { ERR_USER_OTHER_ERROR } from "./user.middleware.js";
+import { SpinderError, okResponse } from "../utils/utils.js";
 import { HttpStatusCode } from "axios";
 
 async function returnSpotifyUserProfile(
   req: Request,
   res: Response,
-  next: (error: SpinderErrorResponse) => void
+  next: (error: SpinderError) => void
 ) {
-  const accessToken = req.cookies?.spinder_spotify_access_token || null;
-  var userProfile: SpotifyUserProfileData;
-
   try {
+    const accessToken = req.cookies.spinder_spotify_access_token || null;
+    var userProfile: SpotifyUserProfileData;
     userProfile = await getSpotifyProfile(accessToken);
-    console.log(
-      `Responding to request at ${req.originalUrl} with: ${JSON.stringify(
-        userProfile
-      )}`
-    );
-    res
-      .status(HttpStatusCode.Ok)
-      .json(new SpotifyUserProfileResponse(STATUS_OK, userProfile));
-  } catch (err) {
+    okResponse(req, res, userProfile);
+  } catch (error) {
+    console.log(error);
     next(
-      new SpinderErrorResponse(
-        ERR_USER_OTHER_ERROR,
-        `Failed to get user's Spotify profile data. ${err}`
+      new SpinderError(
+        HttpStatusCode.InternalServerError,
+        "Failed to get user's Spotify profile data."
       )
     );
   }

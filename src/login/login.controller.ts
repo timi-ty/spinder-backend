@@ -13,18 +13,14 @@ import {
   SpotifyUserProfileData,
   defaultSpinderUserData,
 } from "../user/user.model.js";
-import { FinalizeLoginData, FinalizeLoginResponse } from "./login.model.js";
+import { FinalizeLoginData } from "./login.model.js";
 import {
-  STATUS_OK,
-  SpinderErrorResponse,
+  SpinderError,
   fiveMinutesInMillis,
+  okRedirect,
+  okResponse,
   oneYearInMillis,
 } from "../utils/utils.js";
-import {
-  ERR_LOGIN_ACCESS_DENIED,
-  ERR_LOGIN_FINALIZE_DENIED,
-  ERR_LOGIN_OTHER_ERROR,
-} from "./login.middleware.js";
 
 //TODO: Purge this Map of stale entries at intervals.
 const spotifyLoginStates: Map<string, string> = new Map(); //This map associates 5 minute cookies to Spotify login state. When a login callback is received, the callback req MUST have a cookie that exists in this map and the content MUST be the corresponding state.
@@ -37,7 +33,7 @@ function startLoginWithSpotify(req: Request, res: Response) {
   const uniqueId = uuidv4();
   spotifyLoginStates.set(uniqueId, state); //Associate every login request with a unique id.
 
-  const loginId = req.cookies?.loginId || null;
+  const loginId = req.cookies.loginId || null;
 
   if (loginId) spotifyLoginStates.delete(loginId);
 
@@ -46,26 +42,24 @@ function startLoginWithSpotify(req: Request, res: Response) {
     httpOnly: true,
   }); //Create a cookie with this uniqueId. Overwrite previously existing cookies to ensure that only the newest login attempt from a browser is valid.
 
-  console.log(`Received login request with ID - ${uniqueId}, State - ${state}`);
-
-  res.status(HttpStatusCode.SeeOther).redirect(
+  const redirectUrl =
     "https://accounts.spotify.com/authorize?" +
-      querystring.stringify({
-        response_type: "code",
-        client_id: process.env.SPOTIFY_CLIENT_ID,
-        scope: scope,
-        redirect_uri: process.env.SPOTIFY_REDIRECT_URI,
-        state: state,
-        show_dialog: true,
-      })
-  );
+    querystring.stringify({
+      response_type: "code",
+      client_id: process.env.SPOTIFY_CLIENT_ID,
+      scope: scope,
+      redirect_uri: process.env.SPOTIFY_REDIRECT_URI,
+      state: state,
+      show_dialog: true,
+    });
+  okRedirect(req, res, redirectUrl);
 }
 
 //Finishes the Spotify Authorization flow. This is a callback touched directly by the browser so it should not send a JSON response. It redirects instead.
 async function finishLoginWithSpotify(
   req: Request,
   res: Response,
-  next: (error: SpinderErrorResponse) => void
+  next: (error: SpinderError) => void
 ) {
   const code = req.query.code || null;
   const state = req.query.state || null;
@@ -73,15 +67,9 @@ async function finishLoginWithSpotify(
   const confirmState = loginId ? spotifyLoginStates.get(loginId) : null;
   const acceptRequest = code && state && confirmState && state === confirmState;
 
-  console.log(`Received login callback with ID - ${loginId}, State - ${state}`);
-
   if (acceptRequest) {
     try {
       const authToken = await requestSpotifyAuthToken(code);
-
-      console.log(
-        `Finished login: Token - ${authToken.accessToken}, Expiry - ${authToken.maxAge}`
-      );
       res.cookie("spinder_spotify_access_token", authToken.accessToken, {
         maxAge: authToken.maxAge,
         httpOnly: true,
@@ -91,79 +79,65 @@ async function finishLoginWithSpotify(
         httpOnly: true,
       });
       console.log(
-        `Responding to request at ${req.originalUrl} with a redirect to: ${process.env.FRONTEND_ROOT}`
+        `Finished login: Token - ${authToken.accessToken}, Expiry - ${authToken.maxAge}`
       );
-      res
-        .status(HttpStatusCode.SeeOther)
-        .redirect(`${process.env.FRONTEND_ROOT}`);
-    } catch (err: any) {
-      next(new SpinderErrorResponse(ERR_LOGIN_OTHER_ERROR, err));
+      okRedirect(req, res, process.env.FRONTEND_ROOT || "");
+    } catch (error) {
+      console.log(error);
+      next(
+        new SpinderError(
+          HttpStatusCode.SeeOther,
+          "Failed to get spotify access token."
+        )
+      );
     }
   } else {
-    const errorCode = req.query.error
-      ? ERR_LOGIN_ACCESS_DENIED
-      : ERR_LOGIN_OTHER_ERROR;
-    next(
-      new SpinderErrorResponse(
-        errorCode,
-        `Callback request rejected. querryError - ${req.query.error}, code - ${code}, state - ${state}, confirmState - ${confirmState}, loginId - ${loginId}`
-      )
-    );
+    const errorMessage = req.query.error
+      ? "User denied spotify access."
+      : "Spinder rejected authentication request.";
+    next(new SpinderError(HttpStatusCode.SeeOther, errorMessage));
   }
 }
 
 async function finalizeLogin(
   req: Request,
   res: Response,
-  next: (error: SpinderErrorResponse) => void
+  next: (error: SpinderError) => void
 ) {
   //This cookie is set when finishing Spotify login.
-  const accessToken = req.cookies?.spinder_spotify_access_token || null;
+  const accessToken = req.cookies.spinder_spotify_access_token || null;
   var userProfile: SpotifyUserProfileData | null = null;
 
   try {
     userProfile = await getSpotifyProfile(accessToken);
-  } catch (err) {
+  } catch (error) {
+    console.log(error);
     next(
-      new SpinderErrorResponse(
-        ERR_LOGIN_FINALIZE_DENIED,
-        `Failed to get user's Spotify profile data with, Access Token: ${accessToken}. ${err}`
+      new SpinderError(
+        HttpStatusCode.InternalServerError,
+        `Failed to get user's Spotify profile data with, Access Token: ${accessToken}.`
       )
     );
+    return;
   }
 
-  if (userProfile !== null) {
-    try {
-      const customToken: FinalizeLoginData = {
-        firebaseCustomToken: await createFirebaseCustomToken(userProfile.id),
-        spotifyAccessToken: accessToken,
-      };
-      setFirestoreDocData(
-        `users/${userProfile.id}`,
-        defaultSpinderUserData,
-        true
-      );
-      console.log(
-        `Responding to request at ${req.originalUrl} with: ${JSON.stringify(
-          customToken
-        )}`
-      );
-      res
-        .status(HttpStatusCode.Ok)
-        .json(new FinalizeLoginResponse(STATUS_OK, customToken));
-    } catch (err) {
-      next(
-        new SpinderErrorResponse(
-          ERR_LOGIN_FINALIZE_DENIED,
-          `Failed to finalize login with firebase. ${err}`
-        )
-      );
-    }
-  } else {
+  try {
+    const customToken: FinalizeLoginData = {
+      firebaseCustomToken: await createFirebaseCustomToken(userProfile.id),
+      spotifyAccessToken: accessToken,
+    };
+    setFirestoreDocData(
+      `users/${userProfile.id}`,
+      defaultSpinderUserData,
+      true
+    );
+    okResponse(req, res, customToken);
+  } catch (error) {
+    console.log(error);
     next(
-      new SpinderErrorResponse(
-        ERR_LOGIN_FINALIZE_DENIED,
-        `Failed to get user's Spotify profile data.`
+      new SpinderError(
+        HttpStatusCode.InternalServerError,
+        `Failed to finalize login with firebase for user with, ID: ${userProfile.id}.`
       )
     );
   }

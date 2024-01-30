@@ -1,41 +1,44 @@
-const STATUS_OK = "ok";
-const STATUS_ERROR = "error";
+import { HttpStatusCode } from "axios";
+import { Request, Response } from "express";
 
 const fiveMinutesInMillis = 300000; //5 minutes in millis
 const oneYearInMillis = 31536000000; //1 year in millis
 
-interface SpinderResponse<T> {
-  status: string;
-  data: T;
-}
+class SpinderError {
+  status: number;
+  message: string;
 
-class SpinderErrorResponse implements SpinderResponse<string> {
-  status: string;
-  code: string;
-  data: string;
-
-  constructor(code: string, data: string) {
-    this.status = STATUS_ERROR;
-    this.code = code;
-    this.data = data;
-  }
-
-  error(): Error {
-    return new Error(this.data);
+  constructor(status: number, message: string) {
+    this.status = status;
+    this.message = message;
   }
 }
 
-function statusOk(statusCode: number): boolean {
-  // Check if the status code is within the range of standard success codes
-  return statusCode >= 200 && statusCode < 300;
+interface SpotifyErrorResponse {
+  error: SpinderError;
+}
+
+function okResponse(req: Request, res: Response, responseData: any) {
+  console.log(
+    `Responding to request at ${req.originalUrl} with: ${JSON.stringify(
+      responseData
+    )}`
+  );
+  res.status(HttpStatusCode.Ok).json(responseData);
+}
+
+function okRedirect(req: Request, res: Response, redirectUrl: string) {
+  console.log(
+    `Responding to request at ${req.originalUrl} with a redirect to: ${redirectUrl}`
+  );
+  res.status(HttpStatusCode.SeeOther).redirect(redirectUrl);
 }
 
 export {
-  STATUS_OK,
-  STATUS_ERROR,
   fiveMinutesInMillis,
   oneYearInMillis,
-  type SpinderResponse,
-  SpinderErrorResponse,
-  statusOk,
+  SpinderError,
+  SpotifyErrorResponse,
+  okResponse,
+  okRedirect,
 };

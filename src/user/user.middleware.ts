@@ -1,23 +1,14 @@
 import { Request, Response } from "express";
-import { HttpStatusCode } from "axios";
-import { SpinderErrorResponse } from "../utils/utils.js";
+import { SpinderError } from "../utils/utils.js";
 
 function userRequestLogger(req: Request, res: Response, next: () => void) {
   console.log(`Recieved a /user ${req.method} request to ${req.url}`);
   next();
 }
 
-const ERR_USER_OTHER_ERROR = "user_other_error";
-
-function userErrorHandler(
-  err: SpinderErrorResponse,
-  req: Request,
-  res: Response,
-  next: (err: Error) => void
-) {
-  console.log(`User Error - ${JSON.stringify(err)}.`);
-  next(err.error());
-  res.status(HttpStatusCode.InternalServerError).json(err);
+function userErrorHandler(error: SpinderError, req: Request, res: Response) {
+  console.log(`User Error at ${req.originalUrl} - ${error.message}.`);
+  res.status(error.status).json(error);
 }
 
-export { userRequestLogger, ERR_USER_OTHER_ERROR, userErrorHandler };
+export { userRequestLogger, userErrorHandler };

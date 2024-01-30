@@ -10,7 +10,7 @@ import {
   assembleDiscoverRouter,
   addDiscoverRouter,
 } from "./discover/discover.router.js";
-import { SpinderErrorResponse } from "./utils/utils.js";
+import { SpinderError } from "./utils/utils.js";
 
 //TODO: console.log every error that you catch in a try/catch block and forward just a descriptive string message of the error source to the error handler middleware.
 
@@ -55,7 +55,12 @@ function catchAll(req: Request, res: Response) {
     );
     res
       .status(HttpStatusCode.NotFound)
-      .json(new SpinderErrorResponse("not_an_api", "not_an_api"));
+      .json(
+        new SpinderError(
+          HttpStatusCode.NotFound,
+          `${req.originalUrl} is not an api endpoint.`
+        )
+      );
   } else {
     // Request made by entering URL in the browser
     console.log(
