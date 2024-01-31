@@ -1,6 +1,13 @@
+type DiscoverSourceType =
+  | "Anything Me"
+  | "Following"
+  | "Playlist"
+  | "Artiste"
+  | "Keyword";
+
 interface DiscoverSourceTypesData {
   selectedSourceType: number;
-  sourceTypes: string[];
+  sourceTypes: DiscoverSourceType[];
 }
 
 export { DiscoverSourceTypesData };

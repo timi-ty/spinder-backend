@@ -1,6 +1,7 @@
 import { applicationDefault, cert, initializeApp } from "firebase-admin/app";
 import { Auth, getAuth } from "firebase-admin/auth";
 import { Firestore, getFirestore } from "firebase-admin/firestore";
+import { firebaseLogger, loginLogger } from "../utils/logger.js";
 
 var defaultAuth: Auth;
 var db: Firestore;
@@ -12,7 +13,7 @@ function startFirebaseApp() {
     process.env.FIREBASE_SERVICE_ACCOUNT_KEY || "{}"
   );
   credential = cert(accountKeyJson);
-  console.log(
+  firebaseLogger.debug(
     `Initializing firebase app with, Project ID - ${accountKeyJson.project_id}...`
   );
 
@@ -20,10 +21,10 @@ function startFirebaseApp() {
     credential: credential,
   };
 
-  const defaultApp = initializeApp(defaultAppConfig);
+  const defaultApp = initializeApp(defaultAppConfig, "Spinder");
   defaultAuth = getAuth(defaultApp);
   db = getFirestore(defaultApp);
-  console.log(`Initialized firebase app ${defaultApp.name}`);
+  firebaseLogger.success(`Initialized firebase app ${defaultApp.name}.`);
 }
 
 async function createFirebaseCustomToken(userId: string) {
@@ -33,9 +34,9 @@ async function createFirebaseCustomToken(userId: string) {
     );
   }
 
-  console.log(`Trying to sign user id - ${userId}...`);
+  loginLogger.debug(`Trying to sign user id - ${userId}...`);
   const customToken = await defaultAuth.createCustomToken(userId);
-  console.log(`Sucessfully signed user id - ${userId}.`);
+  loginLogger.success(`Sucessfully signed user id - ${userId}.`);
   return customToken;
 }
 

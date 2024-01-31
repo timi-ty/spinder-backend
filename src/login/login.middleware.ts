@@ -1,9 +1,9 @@
-import { HttpStatusCode } from "axios";
 import { Request, Response } from "express";
-import { SpinderError } from "../utils/utils.js";
+import { SpinderClientError, SpinderError } from "../utils/utils.js";
+import { loginLogger } from "../utils/logger.js";
 
 function loginRequestLogger(req: Request, res: Response, next: () => void) {
-  console.log(`Recieved a /login ${req.method} request to ${req.url}`);
+  loginLogger.debug(`Recieved a /login ${req.method} request to ${req.url}`);
   next();
 }
 
@@ -13,7 +13,10 @@ function loginErrorHandler(
   res: Response,
   next: any
 ) {
-  console.error(`Login Error at ${req.originalUrl} - ${err.message}.`);
+  loginLogger.error(
+    `Origin Url: ${req.originalUrl}, Message: ${err.error.message}`
+  );
+  loginLogger.error(err.error.stack);
 
   if (!req.xhr) {
     //This request came straight form the browser and should not receive a JSON response. Find another way to communicate this error to the frontend.
@@ -22,7 +25,7 @@ function loginErrorHandler(
   }
 
   //Send error response to let the frontend know that the login process must be restarted.
-  res.status(err.status).json(err);
+  res.status(err.status).json(new SpinderClientError(err));
 }
 
 export { loginRequestLogger, loginErrorHandler };

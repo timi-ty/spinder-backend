@@ -14,6 +14,7 @@ import {
   catchUndefined,
   interceptRequestMismatch,
 } from "./app.middleware.js";
+import { appLogger } from "./utils/logger.js";
 
 //TODO: console.log every error that you catch in a try/catch block and forward just a descriptive string message of the error source to the error handler middleware.
 
@@ -53,5 +54,5 @@ app.use(catchUndefined);
 app.use(catchError);
 
 app.listen(process.env.PORT, () => {
-  console.log(`Spinder app listening on port ${process.env.PORT}`);
+  appLogger.info(`Spinder app listening on port ${process.env.PORT}...`);
 });

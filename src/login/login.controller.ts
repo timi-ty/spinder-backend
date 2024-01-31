@@ -21,6 +21,7 @@ import {
   okResponse,
   oneYearInMillis,
 } from "../utils/utils.js";
+import { loginLogger } from "../utils/logger.js";
 
 //TODO: Purge this Map of stale entries at intervals.
 const spotifyLoginStates: Map<string, string> = new Map(); //This map associates 5 minute cookies to Spotify login state. When a login callback is received, the callback req MUST have a cookie that exists in this map and the content MUST be the corresponding state.
@@ -83,11 +84,11 @@ async function finishLoginWithSpotify(
       );
       okRedirect(req, res, process.env.FRONTEND_ROOT || "");
     } catch (error) {
-      console.error(error);
+      loginLogger.error(error);
       next(
         new SpinderError(
           HttpStatusCode.InternalServerError,
-          "Failed to get spotify access token."
+          new Error("Failed to get spotify access token.")
         )
       );
     }
@@ -98,7 +99,7 @@ async function finishLoginWithSpotify(
     const status = req.query.error
       ? HttpStatusCode.BadRequest
       : HttpStatusCode.InternalServerError;
-    next(new SpinderError(status, errorMessage));
+    next(new SpinderError(status, new Error(errorMessage)));
   }
 }
 
@@ -114,11 +115,13 @@ async function finalizeLogin(
   try {
     userProfile = await getSpotifyProfile(accessToken);
   } catch (error) {
-    console.error(error);
+    loginLogger.error(error);
     next(
       new SpinderError(
         HttpStatusCode.InternalServerError,
-        `Failed to get user's Spotify profile data with, Access token: ${accessToken}.`
+        new Error(
+          `Failed to get user's Spotify profile data with, Access token: ${accessToken}.`
+        )
       )
     );
     return;
@@ -136,11 +139,13 @@ async function finalizeLogin(
     );
     okResponse(req, res, customToken);
   } catch (error) {
-    console.error(error);
+    loginLogger.error(error);
     next(
       new SpinderError(
         HttpStatusCode.InternalServerError,
-        `Failed to finalize login with firebase for user with, Id: ${userProfile.id}.`
+        new Error(
+          `Failed to finalize login with firebase for user with, Id: ${userProfile.id}.`
+        )
       )
     );
   }

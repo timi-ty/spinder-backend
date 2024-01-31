@@ -1,4 +1,5 @@
 import axios, { HttpStatusCode } from "axios";
+import { authLogger } from "../utils/logger.js";
 
 interface AuthToken {
   accessToken: string;
@@ -44,7 +45,7 @@ async function requestSpotifyAuthToken(code: any): Promise<AuthToken> {
       );
     }
   } catch (error) {
-    console.log(error);
+    authLogger.error(error);
     throw new Error("Auth request failed.");
   }
 }
@@ -88,7 +89,7 @@ async function refreshSpotifyAuthToken(
       );
     }
   } catch (error) {
-    console.log(error);
+    authLogger.error(error);
     throw new Error("Refresh auth request failed.");
   }
 }

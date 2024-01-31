@@ -3,6 +3,7 @@ import { HttpStatusCode } from "axios";
 import { oneYearInMillis, SpinderError } from "../utils/utils.js";
 import { refreshSpotifyAuthToken } from "./auth.utils.js";
 import { exchangeFirebaseIdTokenForUserId } from "../firebase/firebase.spinder.js";
+import { authLogger } from "../utils/logger.js";
 
 const BEARER = "Bearer";
 
@@ -34,11 +35,13 @@ async function ensureSpotifyAccessToken(
       );
       next();
     } catch (error) {
-      console.error(error);
+      authLogger.error(error);
       next(
         new SpinderError(
           HttpStatusCode.Unauthorized,
-          `Failed to refresh spotify access token. Refresh token: ${refreshToken}`
+          new Error(
+            `Failed to refresh spotify access token. Refresh token: ${refreshToken}`
+          )
         )
       );
     }
@@ -46,7 +49,9 @@ async function ensureSpotifyAccessToken(
     next(
       new SpinderError(
         HttpStatusCode.Unauthorized,
-        `Failed to refresh spotify access token. Refresh token: ${refreshToken}`
+        new Error(
+          `Failed to refresh spotify access token. Refresh token: ${refreshToken}`
+        )
       )
     );
   }
@@ -70,16 +75,18 @@ async function ensureFirebaseAuthenticatedUser(
     try {
       const userId = await exchangeFirebaseIdTokenForUserId(idToken);
       req.cookies.userId = userId;
-      console.log(
+      authLogger.debug(
         `Ensured that the user with id: ${req.cookies.userId} is authorized.`
       );
       next(); //User is authenticated, continue to the next handler.
     } catch (error) {
-      console.error(error);
+      authLogger.error(error);
       next(
         new SpinderError(
           HttpStatusCode.Unauthorized,
-          `Failed to exchange firebase id token for user id. Id token: ${idToken}`
+          new Error(
+            `Failed to exchange firebase id token for user id. Id token: ${idToken}`
+          )
         )
       );
     }
@@ -87,7 +94,9 @@ async function ensureFirebaseAuthenticatedUser(
     next(
       new SpinderError(
         HttpStatusCode.Unauthorized,
-        `Failed to exchange firebase id token for user id. Id token: ${idToken}`
+        new Error(
+          `Failed to exchange firebase id token for user id. Id token: ${idToken}`
+        )
       )
     );
   }

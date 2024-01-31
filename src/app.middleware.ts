@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { HttpStatusCode } from "axios";
-import { SpinderError } from "./utils/utils.js";
+import { SpinderClientError, SpinderError } from "./utils/utils.js";
+import { appLogger } from "./utils/logger.js";
 
 //TODO: FInd a better way to identify AJAX requests rather than faking the xhr header.
 
@@ -15,7 +16,9 @@ function interceptRequestMismatch(req: Request, res: Response, next: any) {
     next(
       new SpinderError(
         HttpStatusCode.BadRequest,
-        `Request mismatch. Sent an AJAX request to ${req.originalUrl} but it is a browser only url.`
+        new Error(
+          `Request mismatch. Sent an AJAX request to ${req.originalUrl} but it is a browser only url.`
+        )
       )
     );
   } else if (!req.xhr && !isBrowserUrl) {
@@ -23,7 +26,9 @@ function interceptRequestMismatch(req: Request, res: Response, next: any) {
     next(
       new SpinderError(
         HttpStatusCode.BadRequest,
-        `Request mismatch. Entered ${req.originalUrl} in the browser but it is an AJAX only endpoint.`
+        new Error(
+          `Request mismatch. Entered ${req.originalUrl} in the browser but it is an AJAX only endpoint.`
+        )
       )
     );
   } else {
@@ -32,23 +37,23 @@ function interceptRequestMismatch(req: Request, res: Response, next: any) {
 }
 
 function catchUndefined(req: Request, res: Response) {
-  console.log(
+  appLogger.warn(
     `Received a request to an undefined endpoint at ${req.originalUrl}.`
   );
   if (req.xhr) {
     // Request made by AJAX, sending JSON not found.
-    console.log("Assuming AJAX made this request. Sending JSON response...");
+    appLogger.warn("Assuming AJAX made this request. Sending JSON response...");
     res
       .status(HttpStatusCode.NotFound)
       .json(
         new SpinderError(
           HttpStatusCode.NotFound,
-          `${req.originalUrl} is not an api endpoint.`
+          new Error(`${req.originalUrl} is not an api endpoint.`)
         )
       );
   } else {
     // Request made by entering URL in the browser, sending browser not found.
-    console.log(
+    appLogger.warn(
       "Assuming the request came from entering the url in the browser. Redirecting..."
     );
     res
@@ -58,10 +63,13 @@ function catchUndefined(req: Request, res: Response) {
 }
 
 function catchError(err: SpinderError, req: Request, res: Response, next: any) {
-  console.error(`App error at ${req.originalUrl} - ${err.message}`);
+  appLogger.error(
+    `Origin Url: ${req.originalUrl}, Message: ${err.error.message}`
+  );
+  appLogger.error(err.error.stack);
   if (req.xhr) {
     // Request made by AJAX, sending JSON error.
-    res.status(err.status).json(err);
+    res.status(err.status).json(new SpinderClientError(err));
   } else {
     // Request made by entering URL in the browser, sending browser error.
     res.status(err.status).redirect(`${process.env.FRONTEND_ROOT}`);

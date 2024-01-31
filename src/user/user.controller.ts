@@ -3,6 +3,7 @@ import { SpotifyUserProfileData } from "./user.model.js";
 import { getSpotifyProfile } from "./user.utils.js";
 import { SpinderError, okResponse } from "../utils/utils.js";
 import { HttpStatusCode } from "axios";
+import { userLogger } from "../utils/logger.js";
 
 async function returnSpotifyUserProfile(
   req: Request,
@@ -15,11 +16,11 @@ async function returnSpotifyUserProfile(
     userProfile = await getSpotifyProfile(accessToken);
     okResponse(req, res, userProfile);
   } catch (error) {
-    console.error(error);
+    userLogger.error(error);
     next(
       new SpinderError(
         HttpStatusCode.InternalServerError,
-        "Failed to get user's Spotify profile data."
+        new Error("Failed to get user's Spotify profile data.")
       )
     );
   }

@@ -1,8 +1,11 @@
 import { Request, Response } from "express";
-import { SpinderError } from "../utils/utils.js";
+import { SpinderClientError, SpinderError } from "../utils/utils.js";
+import { discoverLogger } from "../utils/logger.js";
 
 function discoverRequestLogger(req: Request, res: Response, next: () => void) {
-  console.log(`Recieved a /discover ${req.method} request to ${req.url}`);
+  discoverLogger.debug(
+    `Recieved a /discover ${req.method} request to ${req.url}`
+  );
   next();
 }
 
@@ -12,8 +15,11 @@ function discoverErrorHandler(
   res: Response,
   next: any
 ) {
-  console.error(`Discover Error at ${req.originalUrl} - ${err.message}.`);
-  res.status(err.status).json(err);
+  discoverLogger.error(
+    `Origin Url: ${req.originalUrl}, Message: ${err.error.message}`
+  );
+  discoverLogger.error(err.error.stack);
+  res.status(err.status).json(new SpinderClientError(err));
 }
 
 export { discoverRequestLogger, discoverErrorHandler };

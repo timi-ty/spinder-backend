@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import config from "../config/config.js";
 import { SpinderError, okResponse } from "../utils/utils.js";
 import { DiscoverSourceTypesData } from "./discover.model.js";
 import { HttpStatusCode } from "axios";
 import { getOrCreateSpinderUserData } from "../user/user.utils.js";
+import { discoverLogger } from "../utils/logger.js";
 
 //Get the list of currently allowed discover destinations. The user's destination selection should be marked in the response.
 async function getDiscoverDestinations(
@@ -31,20 +31,25 @@ async function getDiscoverSourceTypes(
     );
 
     var discoverSourceTypesData: DiscoverSourceTypesData = {
-      selectedSourceType: 0,
-      sourceTypes: [],
+      selectedSourceType: spinderUserData.selectedDiscoverSourceType,
+      sourceTypes: [
+        "Anything Me",
+        "Following",
+        "Playlist",
+        "Artiste",
+        "Keyword",
+      ],
     };
 
-    discoverSourceTypesData.sourceTypes = config.discover_source_types;
-    discoverSourceTypesData.selectedSourceType =
-      spinderUserData.selectedDiscoverSourceType;
     okResponse(req, res, discoverSourceTypesData);
   } catch (error) {
-    console.error(error);
+    discoverLogger.error(error);
     next(
       new SpinderError(
         HttpStatusCode.InternalServerError,
-        "Failed to assemble reponse. This is most likely a db query failure."
+        new Error(
+          "Failed to assemble reponse. This is most likely a db query failure."
+        )
       )
     );
   }
