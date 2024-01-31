@@ -8,27 +8,27 @@ const loginLogger = logger.createNamedLogger("Login");
 const discoverLogger = logger.createNamedLogger("Discover");
 
 function appMarkerLog(message: string) {
-  appLogger.bold().bgColorLog("magenta", message);
+  appLogger.bold().bgColorLog("magenta", `[App] ${message}`);
 }
 
 function firebaseMarkerLog(message: string) {
-  appLogger.bold().bgColorLog("magenta", message);
+  firebaseLogger.bold().bgColorLog("magenta", `[Firebase] ${message}`);
 }
 
 function authMarkerLog(message: string) {
-  appLogger.bold().bgColorLog("magenta", message);
+  authLogger.bold().bgColorLog("magenta", `[Auth] ${message}`);
 }
 
 function userMarkerLog(message: string) {
-  appLogger.bold().bgColorLog("magenta", message);
+  userLogger.bold().bgColorLog("magenta", `[User] ${message}`);
 }
 
 function loginMarkerLog(message: string) {
-  appLogger.bold().bgColorLog("magenta", message);
+  loginLogger.bold().bgColorLog("magenta", `[Login] ${message}`);
 }
 
 function discoverMarkerLog(message: string) {
-  appLogger.bold().bgColorLog("magenta", message);
+  discoverLogger.bold().bgColorLog("magenta", `[Discover] ${message}`);
 }
 
 export {

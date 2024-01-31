@@ -8,7 +8,10 @@ import {
   setFirestoreDocData,
 } from "../firebase/firebase.spinder.js";
 import { requestSpotifyAuthToken } from "../auth/auth.utils.js";
-import { getSpotifyProfile } from "../user/user.utils.js";
+import {
+  getOrCreateSpinderUserData,
+  getSpotifyProfile,
+} from "../user/user.utils.js";
 import {
   SpotifyUserProfileData,
   defaultSpinderUserData,
@@ -132,11 +135,7 @@ async function finalizeLogin(
       firebaseCustomToken: await createFirebaseCustomToken(userProfile.id),
       spotifyAccessToken: accessToken,
     };
-    setFirestoreDocData(
-      `users/${userProfile.id}`,
-      defaultSpinderUserData,
-      true
-    );
+    getOrCreateSpinderUserData(userProfile.id);
     okResponse(req, res, customToken);
   } catch (error) {
     loginLogger.error(error);

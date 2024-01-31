@@ -1,7 +1,11 @@
 import { applicationDefault, cert, initializeApp } from "firebase-admin/app";
 import { Auth, getAuth } from "firebase-admin/auth";
 import { Firestore, getFirestore } from "firebase-admin/firestore";
-import { firebaseLogger, loginLogger } from "../utils/logger.js";
+import {
+  firebaseLogger,
+  firebaseMarkerLog,
+  loginLogger,
+} from "../utils/logger.js";
 
 var defaultAuth: Auth;
 var db: Firestore;
@@ -74,6 +78,10 @@ async function setFirestoreDocData(docPath: string, data: any, merge: boolean) {
 
   const docRef = db.doc(docPath);
   await docRef.set(data, { merge: merge });
+
+  firebaseMarkerLog(
+    `Set firebase data at ${docPath}, data - ${JSON.stringify(data)}`
+  );
 }
 
 export {

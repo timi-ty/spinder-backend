@@ -9,6 +9,7 @@ import {
   defaultSpinderUserData,
 } from "./user.model.js";
 import { SpotifyErrorResponse } from "../utils/utils.js";
+import { userMarkerLog } from "../utils/logger.js";
 
 async function getSpotifyProfile(
   accessToken: string
@@ -40,8 +41,18 @@ async function getOrCreateSpinderUserData(
 
   if (spinderUserData === null) {
     await setFirestoreDocData(`users/${userId}`, defaultSpinderUserData, true);
+    userMarkerLog(
+      `Set default Spinder user data at users/${userId} with defaultData - ${JSON.stringify(
+        defaultSpinderUserData
+      )}`
+    );
     return defaultSpinderUserData;
   } else {
+    userMarkerLog(
+      `Returning existing Spinder user data at users/${userId}, data - ${JSON.stringify(
+        spinderUserData
+      )}`
+    );
     return spinderUserData;
   }
 }
