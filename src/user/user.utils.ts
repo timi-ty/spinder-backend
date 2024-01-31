@@ -46,4 +46,12 @@ async function getOrCreateSpinderUserData(
   }
 }
 
-export { getSpotifyProfile, getOrCreateSpinderUserData };
+async function setSpinderUserData(
+  userId: string,
+  spinderUserData: SpinderUserData,
+  merge = true
+): Promise<void> {
+  return setFirestoreDocData(`users/${userId}`, spinderUserData, merge);
+}
+
+export { getSpotifyProfile, getOrCreateSpinderUserData, setSpinderUserData };

@@ -3,7 +3,10 @@ import {
   discoverErrorHandler,
   discoverRequestLogger,
 } from "./discover.middleware.js";
-import { getDiscoverSourceTypes } from "./discover.controller.js";
+import {
+  getDiscoverDestinations,
+  getDiscoverSourceTypes,
+} from "./discover.controller.js";
 import { ensureFirebaseAuthenticatedUser } from "../auth/auth.middleware.js";
 
 var discoverRouter: Router;
@@ -18,6 +21,8 @@ function assembleDiscoverRouter(router: Router) {
   discoverRouter.use(ensureFirebaseAuthenticatedUser);
 
   discoverRouter.get("/source-types", getDiscoverSourceTypes);
+
+  discoverRouter.get("/destinations", getDiscoverDestinations);
 
   //Handle login errors.
   discoverRouter.use(discoverErrorHandler);

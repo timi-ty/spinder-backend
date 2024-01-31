@@ -35,10 +35,12 @@ interface SpotifyUserProfileData {
 
 interface SpinderUserData {
   selectedDiscoverSourceType: number;
+  selectedDiscoverDestination: string;
 }
 
 const defaultSpinderUserData: SpinderUserData = {
   selectedDiscoverSourceType: 0,
+  selectedDiscoverDestination: "",
 };
 
 export { SpotifyUserProfileData, SpinderUserData, defaultSpinderUserData };

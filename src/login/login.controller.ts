@@ -29,7 +29,7 @@ const spotifyLoginStates: Map<string, string> = new Map(); //This map associates
 //Launches the Spotify Authorization flow.
 function startLoginWithSpotify(req: Request, res: Response) {
   const state = randomstring.generate(16);
-  const scope = "user-read-private user-read-email";
+  const scope = "user-read-private user-read-email playlist-read-private";
 
   const uniqueId = uuidv4();
   spotifyLoginStates.set(uniqueId, state); //Associate every login request with a unique id.
