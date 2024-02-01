@@ -65,9 +65,9 @@ async function getDiscoverSourceTypes(
 ) {
   try {
     const userId = req.cookies.userId || null;
-    const spinderUserData = await getOrCreateSpinderUserData(userId);
+    const userData = await getOrCreateSpinderUserData(userId);
     var discoverSourceTypesData: DiscoverSourceTypesData = {
-      selectedSourceType: spinderUserData.selectedDiscoverSourceType,
+      selectedSourceType: userData.selectedDiscoverSourceType,
       sourceTypes: [
         "Anything Me",
         "Following",
@@ -92,6 +92,12 @@ async function getDiscoverSourceTypes(
 
 //Using source type, search spotify for matching discover sources.
 async function searchDiscoverSources(
+  req: Request,
+  res: Response,
+  next: (error: SpinderError) => void
+) {}
+
+async function getDiscoverStack(
   req: Request,
   res: Response,
   next: (error: SpinderError) => void

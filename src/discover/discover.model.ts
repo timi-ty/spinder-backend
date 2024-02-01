@@ -6,7 +6,7 @@ type DiscoverSourceType =
   | "Keyword";
 
 interface DiscoverSourceTypesData {
-  selectedSourceType: number;
+  selectedSourceType: DiscoverSourceType;
   sourceTypes: DiscoverSourceType[];
 }
 
@@ -24,6 +24,7 @@ interface DiscoverDestinationData {
 }
 
 export {
+  DiscoverSourceType,
   DiscoverSourceTypesData,
   DiscoverDestinationPlaylist,
   DiscoverDestinationData,

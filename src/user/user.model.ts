@@ -1,3 +1,5 @@
+import { DiscoverSourceType } from "../discover/discover.model";
+
 interface ExplicitContent {
   filter_enabled: boolean;
   filter_locked: boolean;
@@ -34,12 +36,12 @@ interface SpotifyUserProfileData {
 }
 
 interface SpinderUserData {
-  selectedDiscoverSourceType: number;
+  selectedDiscoverSourceType: DiscoverSourceType;
   selectedDiscoverDestination: string;
 }
 
 const defaultSpinderUserData: SpinderUserData = {
-  selectedDiscoverSourceType: 0,
+  selectedDiscoverSourceType: "Anything Me",
   selectedDiscoverDestination: "",
 };
 
