@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import { Request, Response, json } from "express";
 import {
   createFirebaseCustomToken,
-  setFirestoreDocData,
+  setFirestoreDoc,
 } from "../firebase/firebase.spinder.js";
 import { requestSpotifyAuthToken } from "../auth/auth.utils.js";
 import {

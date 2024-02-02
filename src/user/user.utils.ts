@@ -1,7 +1,7 @@
 import { HttpStatusCode } from "axios";
 import {
-  getFirestoreDocData,
-  setFirestoreDocData,
+  getFirestoreDoc,
+  setFirestoreDoc,
 } from "../firebase/firebase.spinder.js";
 import {
   SpinderUserData,
@@ -35,12 +35,12 @@ async function getSpotifyProfile(
 async function getOrCreateSpinderUserData(
   userId: string
 ): Promise<SpinderUserData> {
-  var spinderUserData = await getFirestoreDocData<SpinderUserData>(
+  var spinderUserData = await getFirestoreDoc<SpinderUserData>(
     `users/${userId}`
   );
 
   if (spinderUserData === null) {
-    await setFirestoreDocData(`users/${userId}`, defaultSpinderUserData, true);
+    await setFirestoreDoc(`users/${userId}`, defaultSpinderUserData, true);
     userMarkerLog(
       `Set default Spinder user data at users/${userId} with defaultData - ${JSON.stringify(
         defaultSpinderUserData
@@ -62,7 +62,7 @@ async function setSpinderUserData(
   spinderUserData: SpinderUserData,
   merge = true
 ): Promise<void> {
-  return setFirestoreDocData(`users/${userId}`, spinderUserData, merge);
+  return setFirestoreDoc(`users/${userId}`, spinderUserData, merge);
 }
 
 export { getSpotifyProfile, getOrCreateSpinderUserData, setSpinderUserData };
