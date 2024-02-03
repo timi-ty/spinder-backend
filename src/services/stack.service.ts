@@ -1,9 +1,12 @@
 import {
   attachPresenceWatcher,
   deleteFirestoreDoc,
+  getFirestoreCollection,
   setFirestoreDoc,
-} from "../firebase/firebase.spinder";
-import { stackLogger } from "../utils/logger";
+} from "../firebase/firebase.spinder.js";
+import { stackLogger } from "../utils/logger.js";
+
+const sourceStackThresholdSize = 50; // The stack service tries to maintain each user's sourceStack at this size.
 
 function startStackService() {
   attachPresenceWatcher(onPresenceChanged);
@@ -52,4 +55,33 @@ async function onUserInactive(userId: string) {
   }
 }
 
-function attachCurator() {}
+async function progressivelyFillUpSourceStack(userId: string) {
+  //Starts the stack filling callback chain which only end when the user reaches their desired stack size.
+  const sourceStackCollectionPath = `users/${userId}/sourceStack`;
+  const sourceStack = await getFirestoreCollection(sourceStackCollectionPath);
+  if (sourceStack.size >= sourceStackThresholdSize) {
+    return;
+  }
+}
+
+async function attachCurator(isForActiveUsers: boolean) {
+  //Calls progressivelyFillUpStack for every user in either the activeUsers collection or the passiveUsers collection.
+  while (true) {
+    //This becomes impractical for a large number of users. The stack service will need to be structured in a way that it can be horizontally scaled.
+    const curatorUsers = await (isForActiveUsers
+      ? getFirestoreCollection("activeUsers")
+      : getFirestoreCollection("passiveUsers"));
+
+    stackLogger.debug(
+      `Starting a new curator cycle for ${curatorUsers.size} ${
+        isForActiveUsers ? "active" : "passive"
+      } users.`
+    );
+
+    curatorUsers.forEach((doc) => {
+      progressivelyFillUpSourceStack(doc.id);
+    });
+  }
+}
+
+export { startStackService };

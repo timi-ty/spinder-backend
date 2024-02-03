@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import { SpotifyUserProfileData } from "./user.model.js";
-import { getSpotifyProfile } from "./user.utils.js";
 import { SpinderError, okResponse } from "../utils/utils.js";
 import { HttpStatusCode } from "axios";
 import { userLogger } from "../utils/logger.js";
+import { getSpotifyProfile } from "../spotify/spotify.api.js";
+import { SpotifyUserProfileData } from "../spotify/spotify.model.js";
 
 async function returnSpotifyUserProfile(
   req: Request,

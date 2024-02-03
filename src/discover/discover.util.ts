@@ -1,11 +1,10 @@
-import { HttpStatusCode } from "axios";
-import { SpotifyErrorResponse } from "../utils/utils.js";
-import { SpotifyPlaylists } from "./discover.util.model.js";
 import {
   DiscoverDestinationData,
   DiscoverDestinationPlaylist,
 } from "./discover.model.js";
 import { discoverLogger } from "../utils/logger.js";
+import { SpotifyPlaylists } from "../spotify/spotify.model.js";
+import { getUserSpotifyPlaylists } from "../spotify/spotify.api.js";
 
 async function getCountOrAllOwnedSpotifyPlaylists(
   accessToken: string,
@@ -44,34 +43,10 @@ async function getCountOrAllOwnedSpotifyPlaylists(
     offset: spotifyPlaylists.offset,
     total: spotifyPlaylists.total,
     discoverDestinationPlaylists: ownedSpotifyPlaylists,
-    selectedDestinationId: "",
+    selectedDestinationId: "", // Will be set by controller.
   };
 
   return discoverDestinationData;
-}
-
-// Offset is only used if the next url is not supplied.
-async function getUserSpotifyPlaylists(
-  accessToken: string,
-  offset: number,
-  next: string = `https://api.spotify.com/v1/me/playlists?offset=${offset}&limmit=50`
-): Promise<SpotifyPlaylists> {
-  discoverLogger.debug(`Getting user spotify playlists at url ${next}`);
-  const response = await fetch(next, {
-    headers: {
-      Authorization: "Bearer " + accessToken,
-    },
-  });
-
-  if (response.status === HttpStatusCode.Ok) {
-    const spotifyPlaylists: SpotifyPlaylists = await response.json();
-    return spotifyPlaylists;
-  } else {
-    const spotifyErrorResponse: SpotifyErrorResponse = await response.json();
-    throw new Error(
-      `Status: ${spotifyErrorResponse.error.status}, Message: ${spotifyErrorResponse.error.message}`
-    );
-  }
 }
 
 function filterOwnedSpotifyPlaylists(

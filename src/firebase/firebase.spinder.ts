@@ -1,6 +1,10 @@
 import { applicationDefault, cert, initializeApp } from "firebase-admin/app";
 import { Auth, getAuth } from "firebase-admin/auth";
-import { Firestore, getFirestore } from "firebase-admin/firestore";
+import {
+  Firestore,
+  QuerySnapshot,
+  getFirestore,
+} from "firebase-admin/firestore";
 import { Database, getDatabase } from "firebase-admin/database";
 import { firebaseLogger, firebaseMarkerLog } from "../utils/logger.js";
 
@@ -56,6 +60,20 @@ async function exchangeFirebaseIdTokenForUserId(
 
   const decodedToken = await auth.verifyIdToken(idToken, true);
   return decodedToken.uid;
+}
+
+async function getFirestoreCollection(
+  collectionPath: string
+): Promise<QuerySnapshot> {
+  if (!firestore) {
+    throw new Error(
+      "Failed to get doc. firestore object does not exist. Call startFirebaseApp before calling any other functions."
+    );
+  }
+
+  var colRef = firestore.collection(collectionPath);
+  const col = await colRef.get();
+  return col;
 }
 
 async function getFirestoreDoc<T>(docPath: string): Promise<T | null> {
@@ -142,6 +160,7 @@ export {
   startFirebaseApp,
   createFirebaseCustomToken,
   exchangeFirebaseIdTokenForUserId,
+  getFirestoreCollection,
   getFirestoreDoc,
   setFirestoreDoc,
   deleteFirestoreDoc,

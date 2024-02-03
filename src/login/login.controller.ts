@@ -2,20 +2,10 @@ import { HttpStatusCode } from "axios";
 import randomstring from "randomstring";
 import querystring from "querystring";
 import { v4 as uuidv4 } from "uuid";
-import { Request, Response, json } from "express";
-import {
-  createFirebaseCustomToken,
-  setFirestoreDoc,
-} from "../firebase/firebase.spinder.js";
+import { Request, Response } from "express";
+import { createFirebaseCustomToken } from "../firebase/firebase.spinder.js";
 import { requestSpotifyAuthToken } from "../auth/auth.utils.js";
-import {
-  getOrCreateSpinderUserData,
-  getSpotifyProfile,
-} from "../user/user.utils.js";
-import {
-  SpotifyUserProfileData,
-  defaultSpinderUserData,
-} from "../user/user.model.js";
+import { getOrCreateSpinderUserData } from "../user/user.utils.js";
 import { FinalizeLoginData } from "./login.model.js";
 import {
   SpinderError,
@@ -25,6 +15,8 @@ import {
   oneYearInMillis,
 } from "../utils/utils.js";
 import { loginLogger } from "../utils/logger.js";
+import { getSpotifyProfile } from "../spotify/spotify.api.js";
+import { SpotifyUserProfileData } from "../spotify/spotify.model.js";
 
 //TODO: Purge this Map of stale entries at intervals.
 const spotifyLoginStates: Map<string, string> = new Map(); //This map associates 5 minute cookies to Spotify login state. When a login callback is received, the callback req MUST have a cookie that exists in this map and the content MUST be the corresponding state.

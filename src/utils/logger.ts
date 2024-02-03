@@ -7,6 +7,7 @@ const userLogger = logger.createNamedLogger("User");
 const loginLogger = logger.createNamedLogger("Login");
 const discoverLogger = logger.createNamedLogger("Discover");
 const stackLogger = logger.createNamedLogger("Stack");
+const spotifyLogger = logger.createNamedLogger("Spotify");
 
 function appMarkerLog(message: string) {
   appLogger.bold().bgColorLog("magenta", `[App] ${message}`);
@@ -36,6 +37,10 @@ function stackMarkerLog(message: string) {
   stackLogger.bold().bgColorLog("magenta", `[Stack] ${message}`);
 }
 
+function spotifyMarkerLog(message: string) {
+  spotifyLogger.bold().bgColorLog("magenta", `[Spotify] ${message}`);
+}
+
 export {
   appLogger,
   firebaseLogger,
@@ -44,6 +49,7 @@ export {
   loginLogger,
   discoverLogger,
   stackLogger,
+  spotifyLogger,
   appMarkerLog,
   firebaseMarkerLog,
   authMarkerLog,
@@ -51,4 +57,5 @@ export {
   loginMarkerLog,
   discoverMarkerLog,
   stackMarkerLog,
+  spotifyMarkerLog,
 };

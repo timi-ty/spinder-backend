@@ -25,10 +25,6 @@ class SpinderClientError {
   }
 }
 
-interface SpotifyErrorResponse {
-  error: SpinderClientError;
-}
-
 function okResponse(req: Request, res: Response, responseData: any) {
   appLogger.debug(
     `Responding to request at ${req.originalUrl} with: ${JSON.stringify(
@@ -50,7 +46,6 @@ export {
   oneYearInMillis,
   SpinderError,
   SpinderClientError,
-  SpotifyErrorResponse,
   okResponse,
   okRedirect,
 };

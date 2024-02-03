@@ -1,36 +1,9 @@
-import { HttpStatusCode } from "axios";
 import {
   getFirestoreDoc,
   setFirestoreDoc,
 } from "../firebase/firebase.spinder.js";
-import {
-  SpinderUserData,
-  SpotifyUserProfileData,
-  defaultSpinderUserData,
-} from "./user.model.js";
-import { SpotifyErrorResponse } from "../utils/utils.js";
+import { SpinderUserData, defaultSpinderUserData } from "./user.model.js";
 import { userMarkerLog } from "../utils/logger.js";
-
-async function getSpotifyProfile(
-  accessToken: string
-): Promise<SpotifyUserProfileData> {
-  const response = await fetch("https://api.spotify.com/v1/me", {
-    headers: {
-      Authorization: "Bearer " + accessToken,
-    },
-  });
-
-  if (response.status === HttpStatusCode.Ok) {
-    const spotifyUserProfileData: SpotifyUserProfileData =
-      await response.json();
-    return spotifyUserProfileData;
-  } else {
-    const spotifyErrorResponse: SpotifyErrorResponse = await response.json();
-    throw new Error(
-      `Status: ${spotifyErrorResponse.error.status}, Message: ${spotifyErrorResponse.error.message}`
-    );
-  }
-}
 
 async function getOrCreateSpinderUserData(
   userId: string
@@ -65,4 +38,4 @@ async function setSpinderUserData(
   return setFirestoreDoc(`users/${userId}`, spinderUserData, merge);
 }
 
-export { getSpotifyProfile, getOrCreateSpinderUserData, setSpinderUserData };
+export { getOrCreateSpinderUserData, setSpinderUserData };
