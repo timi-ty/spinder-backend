@@ -93,4 +93,70 @@ interface SpotifyPlaylists {
   items: PlaylistItem[];
 }
 
-export { SpotifyErrorResponse, SpotifyUserProfileData, SpotifyPlaylists };
+interface TopTrack {
+  album: Album;
+  artists: Artist[];
+  available_markets: string[];
+  disc_number: number;
+  duration_ms: number;
+  explicit: boolean;
+  external_ids: ExternalIDS;
+  external_urls: ExternalUrls;
+  href: string;
+  id: string;
+  name: string;
+  popularity: number;
+  preview_url: string;
+  track_number: number;
+  type: "track";
+  uri: string;
+  is_local: boolean;
+}
+
+interface Album {
+  album_type: "album" | "single" | "comilation";
+  total_tracks: number;
+  available_markets: string[];
+  external_urls: ExternalUrls;
+  href: string;
+  id: string;
+  images: Image[];
+  name: string;
+  release_date: Date;
+  release_date_precision: "year" | "month" | "day";
+  type: "album";
+  uri: string;
+  artists: Artist[];
+}
+
+interface Artist {
+  external_urls: ExternalUrls;
+  href: string;
+  id: string;
+  name: string;
+  type: "artist";
+  uri: string;
+}
+
+interface ExternalIDS {
+  isrc: string;
+  ean: string;
+  ups: string;
+}
+
+interface SpotifyTopTracks {
+  href: string;
+  limit: number;
+  next: string;
+  offset: number;
+  previous: null;
+  total: number;
+  items: TopTrack[];
+}
+
+export {
+  SpotifyErrorResponse,
+  SpotifyUserProfileData,
+  SpotifyPlaylists,
+  SpotifyTopTracks,
+};

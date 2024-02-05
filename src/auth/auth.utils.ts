@@ -45,7 +45,7 @@ async function requestSpotifyAuthToken(code: any): Promise<AuthToken> {
       );
     }
   } catch (error) {
-    authLogger.error(error);
+    console.error(error);
     throw new Error("Auth request failed.");
   }
 }
@@ -89,7 +89,7 @@ async function refreshSpotifyAuthToken(
       );
     }
   } catch (error) {
-    authLogger.error(error);
+    console.error(error);
     throw new Error("Refresh auth request failed.");
   }
 }

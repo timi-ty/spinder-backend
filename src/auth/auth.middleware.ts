@@ -30,12 +30,12 @@ async function ensureSpotifyAccessToken(
         maxAge: oneYearInMillis,
         httpOnly: true,
       });
-      console.log(
+      authLogger.debug(
         `Finished refresh login: Token - ${authToken.accessToken}, Expiry - ${authToken.maxAge}`
       );
       next();
     } catch (error) {
-      authLogger.error(error);
+      console.error(error);
       next(
         new SpinderError(
           HttpStatusCode.Unauthorized,
@@ -80,7 +80,7 @@ async function ensureFirebaseAuthenticatedUser(
       );
       next(); //User is authenticated, continue to the next handler.
     } catch (error) {
-      authLogger.error(error);
+      console.error(error);
       next(
         new SpinderError(
           HttpStatusCode.Unauthorized,

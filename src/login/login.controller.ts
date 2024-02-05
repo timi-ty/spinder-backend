@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import { Request, Response } from "express";
 import { createFirebaseCustomToken } from "../firebase/firebase.spinder.js";
 import { requestSpotifyAuthToken } from "../auth/auth.utils.js";
-import { getOrCreateSpinderUserData } from "../user/user.utils.js";
+import { updateOrCreateSpinderUserData } from "../user/user.utils.js";
 import { FinalizeLoginData } from "./login.model.js";
 import {
   SpinderError,
@@ -15,7 +15,7 @@ import {
   oneYearInMillis,
 } from "../utils/utils.js";
 import { loginLogger } from "../utils/logger.js";
-import { getSpotifyProfile } from "../spotify/spotify.api.js";
+import { getSpotifyUserProfile } from "../spotify/spotify.api.js";
 import { SpotifyUserProfileData } from "../spotify/spotify.model.js";
 
 //TODO: Purge this Map of stale entries at intervals.
@@ -24,7 +24,8 @@ const spotifyLoginStates: Map<string, string> = new Map(); //This map associates
 //Launches the Spotify Authorization flow.
 function startLoginWithSpotify(req: Request, res: Response) {
   const state = randomstring.generate(16);
-  const scope = "user-read-private user-read-email playlist-read-private";
+  const scope =
+    "user-read-private user-read-email playlist-read-private user-top-read";
 
   const uniqueId = uuidv4();
   spotifyLoginStates.set(uniqueId, state); //Associate every login request with a unique id.
@@ -74,12 +75,12 @@ async function finishLoginWithSpotify(
         maxAge: oneYearInMillis,
         httpOnly: true,
       });
-      console.log(
+      loginLogger.debug(
         `Finished login: Token - ${authToken.accessToken}, Expiry - ${authToken.maxAge}`
       );
       okRedirect(req, res, process.env.FRONTEND_ROOT || "");
     } catch (error) {
-      loginLogger.error(error);
+      console.error(error);
       next(
         new SpinderError(
           HttpStatusCode.InternalServerError,
@@ -108,9 +109,9 @@ async function finalizeLogin(
   var userProfile: SpotifyUserProfileData | null = null;
 
   try {
-    userProfile = await getSpotifyProfile(accessToken);
+    userProfile = await getSpotifyUserProfile(accessToken);
   } catch (error) {
-    loginLogger.error(error);
+    console.error(error);
     next(
       new SpinderError(
         HttpStatusCode.InternalServerError,
@@ -127,10 +128,10 @@ async function finalizeLogin(
       firebaseCustomToken: await createFirebaseCustomToken(userProfile.id),
       spotifyAccessToken: accessToken,
     };
-    getOrCreateSpinderUserData(userProfile.id);
+    updateOrCreateSpinderUserData(userProfile.id, accessToken);
     okResponse(req, res, customToken);
   } catch (error) {
-    loginLogger.error(error);
+    console.error(error);
     next(
       new SpinderError(
         HttpStatusCode.InternalServerError,

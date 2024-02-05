@@ -5,29 +5,40 @@ import {
 import { SpinderUserData, defaultSpinderUserData } from "./user.model.js";
 import { userMarkerLog } from "../utils/logger.js";
 
-async function getOrCreateSpinderUserData(
-  userId: string
+async function updateOrCreateSpinderUserData(
+  userId: string,
+  accessToken: string
 ): Promise<SpinderUserData> {
   var spinderUserData = await getFirestoreDoc<SpinderUserData>(
     `users/${userId}`
   );
 
   if (spinderUserData === null) {
-    await setFirestoreDoc(`users/${userId}`, defaultSpinderUserData, true);
+    spinderUserData = { ...defaultSpinderUserData };
+    spinderUserData.accessToken = accessToken;
+    await setFirestoreDoc(`users/${userId}`, spinderUserData, false);
     userMarkerLog(
       `Set default Spinder user data at users/${userId} with defaultData - ${JSON.stringify(
-        defaultSpinderUserData
+        spinderUserData
       )}`
     );
-    return defaultSpinderUserData;
+    return spinderUserData;
   } else {
+    spinderUserData.accessToken = accessToken;
+    await setFirestoreDoc(`users/${userId}`, spinderUserData, false);
     userMarkerLog(
-      `Returning existing Spinder user data at users/${userId}, data - ${JSON.stringify(
+      `Updated existing Spinder user data at users/${userId}, data - ${JSON.stringify(
         spinderUserData
       )}`
     );
     return spinderUserData;
   }
+}
+
+async function getSpinderUserData(
+  userId: string
+): Promise<SpinderUserData | null> {
+  return getFirestoreDoc<SpinderUserData>(`users/${userId}`);
 }
 
 async function setSpinderUserData(
@@ -38,4 +49,8 @@ async function setSpinderUserData(
   return setFirestoreDoc(`users/${userId}`, spinderUserData, merge);
 }
 
-export { getOrCreateSpinderUserData, setSpinderUserData };
+export {
+  updateOrCreateSpinderUserData,
+  getSpinderUserData,
+  setSpinderUserData,
+};

@@ -1,6 +1,8 @@
 import { applicationDefault, cert, initializeApp } from "firebase-admin/app";
 import { Auth, getAuth } from "firebase-admin/auth";
 import {
+  AggregateField,
+  AggregateQuerySnapshot,
   Firestore,
   QuerySnapshot,
   getFirestore,
@@ -13,12 +15,10 @@ var firestore: Firestore;
 var database: Database;
 
 function startFirebaseApp() {
-  var credential = applicationDefault();
-
   const accountKeyJson = JSON.parse(
     process.env.FIREBASE_SERVICE_ACCOUNT_KEY || "{}"
   );
-  credential = cert(accountKeyJson);
+  const credential = cert(accountKeyJson);
   firebaseLogger.debug(
     `Initializing firebase app with, Project ID - ${accountKeyJson.project_id}...`
   );
@@ -67,13 +67,67 @@ async function getFirestoreCollection(
 ): Promise<QuerySnapshot> {
   if (!firestore) {
     throw new Error(
-      "Failed to get doc. firestore object does not exist. Call startFirebaseApp before calling any other functions."
+      "Failed to get collection. firestore object does not exist. Call startFirebaseApp before calling any other functions."
     );
   }
 
-  var colRef = firestore.collection(collectionPath);
+  const colRef = firestore.collection(collectionPath);
   const col = await colRef.get();
   return col;
+}
+
+async function getFirestoreCollectionSize(
+  collectionPath: string
+): Promise<number> {
+  if (!firestore) {
+    throw new Error(
+      "Failed to get collection. firestore object does not exist. Call startFirebaseApp before calling any other functions."
+    );
+  }
+
+  const colRef = firestore.collection(collectionPath);
+  return (await colRef.count().get()).data().count;
+}
+
+function listenToFirestoreCollection(
+  collectionPath: string,
+  onChange: (snapshot: QuerySnapshot) => void
+): () => void {
+  const query = firestore.collection(collectionPath);
+
+  const unsubscribe = query.onSnapshot(
+    (querySnapshot) => {
+      firebaseLogger.debug(
+        `Received query snapshot of size ${querySnapshot.size}`
+      );
+      onChange(querySnapshot);
+    },
+    (error) => {
+      console.error(error);
+    }
+  );
+  return unsubscribe;
+}
+
+async function batchSetFirestoreCollection(
+  collectionPath: string,
+  collectionData: Map<string, object>
+): Promise<void> {
+  if (!firestore) {
+    throw new Error(
+      "Failed to set collection. firestore object does not exist. Call startFirebaseApp before calling any other functions."
+    );
+  }
+
+  const batch = firestore.batch();
+  const colRef = firestore.collection(collectionPath);
+  collectionData.forEach((value, key) => {
+    const docRef = colRef.doc(key);
+    batch.set(docRef, value);
+  });
+  await batch.commit();
+  firebaseMarkerLog(`Batch set firebase docs at ${collectionPath}.`);
+  return;
 }
 
 async function getFirestoreDoc<T>(docPath: string): Promise<T | null> {
@@ -83,7 +137,7 @@ async function getFirestoreDoc<T>(docPath: string): Promise<T | null> {
     );
   }
 
-  var docRef = firestore.doc(docPath);
+  const docRef = firestore.doc(docPath);
   const doc = await docRef.get();
   return doc.exists ? (doc.data() as T) : null;
 }
@@ -130,7 +184,7 @@ interface PresenceStatus {
 function attachPresenceWatcher(
   onPresenceChanged: (userId: string, isOnline: boolean) => void
 ) {
-  var statusDatabaseRef = database.ref("/status");
+  const statusDatabaseRef = database.ref("/status");
   statusDatabaseRef.on("child_added", (snapshot) => {
     const newUserStatus: PresenceStatus = snapshot.val();
     firebaseLogger.debug(
@@ -152,7 +206,7 @@ function attachPresenceWatcher(
 }
 
 function detachAllPresenceWatchers() {
-  var statusDatabaseRef = database.ref("/status");
+  const statusDatabaseRef = database.ref("/status");
   statusDatabaseRef.off(); // Removes ALL callbacks attached to this ref.
 }
 
@@ -161,6 +215,9 @@ export {
   createFirebaseCustomToken,
   exchangeFirebaseIdTokenForUserId,
   getFirestoreCollection,
+  getFirestoreCollectionSize,
+  listenToFirestoreCollection,
+  batchSetFirestoreCollection,
   getFirestoreDoc,
   setFirestoreDoc,
   deleteFirestoreDoc,

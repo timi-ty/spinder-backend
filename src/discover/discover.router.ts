@@ -7,7 +7,10 @@ import {
   getDiscoverDestinations,
   getDiscoverSourceTypes,
 } from "./discover.controller.js";
-import { ensureFirebaseAuthenticatedUser } from "../auth/auth.middleware.js";
+import {
+  ensureFirebaseAuthenticatedUser,
+  ensureSpotifyAccessToken,
+} from "../auth/auth.middleware.js";
 
 var discoverRouter: Router;
 
@@ -18,6 +21,7 @@ function assembleDiscoverRouter(router: Router) {
   discoverRouter.use(discoverRequestLogger);
 
   //All discover endpoints require the user to be fully authenticated.
+  discoverRouter.use(ensureSpotifyAccessToken);
   discoverRouter.use(ensureFirebaseAuthenticatedUser);
 
   discoverRouter.get("/source-types", getDiscoverSourceTypes);

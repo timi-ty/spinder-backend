@@ -3,7 +3,7 @@ import { SpinderError, okResponse } from "../utils/utils.js";
 import { DiscoverSourceTypesData } from "./discover.model.js";
 import { HttpStatusCode } from "axios";
 import {
-  getOrCreateSpinderUserData,
+  updateOrCreateSpinderUserData,
   setSpinderUserData,
 } from "../user/user.utils.js";
 import { discoverLogger } from "../utils/logger.js";
@@ -25,7 +25,7 @@ async function getDiscoverDestinations(
       10,
       offset
     );
-    const userData = await getOrCreateSpinderUserData(userId);
+    const userData = await updateOrCreateSpinderUserData(userId, accessToken);
     if (
       userData.selectedDiscoverDestination === "" &&
       discoverDestinations.discoverDestinationPlaylists.length > 0
@@ -38,7 +38,7 @@ async function getDiscoverDestinations(
       userData.selectedDiscoverDestination;
     okResponse(req, res, discoverDestinations);
   } catch (error) {
-    discoverLogger.error(error);
+    console.error(error);
     next(
       new SpinderError(
         HttpStatusCode.InternalServerError,
@@ -64,8 +64,9 @@ async function getDiscoverSourceTypes(
   next: (error: SpinderError) => void
 ) {
   try {
+    const accessToken = req.cookies.spinder_spotify_access_token || null;
     const userId = req.cookies.userId || null;
-    const userData = await getOrCreateSpinderUserData(userId);
+    const userData = await updateOrCreateSpinderUserData(userId, accessToken);
     var discoverSourceTypesData: DiscoverSourceTypesData = {
       selectedSourceType: userData.selectedDiscoverSourceType,
       sourceTypes: [
@@ -78,7 +79,7 @@ async function getDiscoverSourceTypes(
     };
     okResponse(req, res, discoverSourceTypesData);
   } catch (error) {
-    discoverLogger.error(error);
+    console.error(error);
     next(
       new SpinderError(
         HttpStatusCode.InternalServerError,

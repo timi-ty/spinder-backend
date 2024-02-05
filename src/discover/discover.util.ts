@@ -4,7 +4,7 @@ import {
 } from "./discover.model.js";
 import { discoverLogger } from "../utils/logger.js";
 import { SpotifyPlaylists } from "../spotify/spotify.model.js";
-import { getUserSpotifyPlaylists } from "../spotify/spotify.api.js";
+import { getSpotifyUserPlaylists } from "../spotify/spotify.api.js";
 
 async function getCountOrAllOwnedSpotifyPlaylists(
   accessToken: string,
@@ -12,7 +12,7 @@ async function getCountOrAllOwnedSpotifyPlaylists(
   count: number,
   offset: number
 ): Promise<DiscoverDestinationData> {
-  var spotifyPlaylists = await getUserSpotifyPlaylists(accessToken, offset);
+  var spotifyPlaylists = await getSpotifyUserPlaylists(accessToken, offset);
   var ownedSpotifyPlaylists = filterOwnedSpotifyPlaylists(
     spotifyPlaylists,
     userId
@@ -21,9 +21,9 @@ async function getCountOrAllOwnedSpotifyPlaylists(
     ownedSpotifyPlaylists.length < count && spotifyPlaylists.next;
   while (keepCurating) {
     discoverLogger.debug(
-      `Found ${ownedSpotifyPlaylists} playlists owned by user ${userId} so far but there are more playlists to search at ${spotifyPlaylists.next}. Continuing...`
+      `Found ${ownedSpotifyPlaylists.length} playlists owned by user ${userId} so far but there are more playlists to search at ${spotifyPlaylists.next}. Continuing...`
     );
-    spotifyPlaylists = await getUserSpotifyPlaylists(
+    spotifyPlaylists = await getSpotifyUserPlaylists(
       accessToken,
       -1,
       spotifyPlaylists.next

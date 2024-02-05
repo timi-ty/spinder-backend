@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { SpinderError, okResponse } from "../utils/utils.js";
 import { HttpStatusCode } from "axios";
 import { userLogger } from "../utils/logger.js";
-import { getSpotifyProfile } from "../spotify/spotify.api.js";
+import { getSpotifyUserProfile } from "../spotify/spotify.api.js";
 import { SpotifyUserProfileData } from "../spotify/spotify.model.js";
 
 async function returnSpotifyUserProfile(
@@ -13,10 +13,10 @@ async function returnSpotifyUserProfile(
   try {
     const accessToken = req.cookies.spinder_spotify_access_token || null;
     var userProfile: SpotifyUserProfileData;
-    userProfile = await getSpotifyProfile(accessToken);
+    userProfile = await getSpotifyUserProfile(accessToken);
     okResponse(req, res, userProfile);
   } catch (error) {
-    userLogger.error(error);
+    console.error(error);
     next(
       new SpinderError(
         HttpStatusCode.InternalServerError,
