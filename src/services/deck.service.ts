@@ -11,7 +11,9 @@ import { getSpinderUserData } from "../user/user.utils.js";
 import { deckLogger } from "../utils/logger.js";
 
 const sourceDeckThresholdSize = 50; // The deck service tries to maintain each user's sourceDeck at this size.
+const sourceDeckMinSize = 20;
 const curatorUnsubMap: Map<string, () => void> = new Map();
+const deckFillerSet: Set<string> = new Set();
 
 function startDeckService() {
   attachPresenceWatcher(onPresenceChanged);
@@ -45,8 +47,18 @@ async function onUserInactive(userId: string) {
   }
 }
 
-//Add a mechanism that ensures this recursive chain is not dispatched more than once per user at a time.
-async function progressivelyFillUpSourceDeck(userId: string) {
+async function progressivelyFillUpSourceDeck(
+  userId: string,
+  isRecursiveCall: boolean
+) {
+  if (!isRecursiveCall && deckFillerSet.has(userId)) {
+    deckLogger.warn(
+      `Another progressive deck filler is currently running for user ${userId}. Aborting this one...`
+    );
+    return;
+  }
+  deckFillerSet.add(userId);
+
   try {
     //Starts the deck filling callback chain which ends when the user reaches their desired deck size.
     const sourceDeckCollectionPath = `users/${userId}/sourceDeck`;
@@ -57,6 +69,7 @@ async function progressivelyFillUpSourceDeck(userId: string) {
       `User ${userId} has ${sourceDeckSize} items in their deck.`
     );
     if (sourceDeckSize >= sourceDeckThresholdSize) {
+      deckFillerSet.delete(userId);
       return;
     }
     deckLogger.debug(
@@ -95,14 +108,16 @@ async function progressivelyFillUpSourceDeck(userId: string) {
       sourceDeckCollectionPath,
       deckNewTracksMap
     );
-    progressivelyFillUpSourceDeck(userId);
+    progressivelyFillUpSourceDeck(userId, true);
   } catch (error) {
     //Filling up a user's deck is an important but expendable process since it runs repeatedly. If it fails, it fails quietly and takes no further action.
+    deckFillerSet.delete(userId);
     console.error(error);
     deckLogger.warn(
       `An error occured while fillng up source deck for user ${userId}. Aborting this cycle...`
     );
   }
+  deckFillerSet.delete(userId);
 }
 
 async function attachCurator() {
@@ -113,19 +128,22 @@ async function attachCurator() {
       if (change.type === "added") {
         const userId = change.doc.id;
         deckLogger.debug(`Found new active user ${userId}.`);
-        progressivelyFillUpSourceDeck(userId); //Dispatch for different users without awaiting.
+        progressivelyFillUpSourceDeck(userId, false); //Dispatch for different users without awaiting.
         const sourceDeckCollectionPath = `users/${userId}/sourceDeck`;
         const sourceDeckListenerUnsub = listenToFirestoreCollection(
           sourceDeckCollectionPath,
           (snapshot) => {
-            snapshot.docChanges().forEach(async (change) => {
+            var hasRemoval = false;
+            snapshot.docChanges().forEach((change) => {
               if (change.type === "removed") {
                 deckLogger.debug(
                   `User ${userId} removed ${change.doc.id} from their source deck.`
                 );
-                await progressivelyFillUpSourceDeck(userId); //Each user has to await each deck fill process.
+                hasRemoval = true;
               }
             });
+            if (hasRemoval && snapshot.size < sourceDeckMinSize)
+              progressivelyFillUpSourceDeck(userId, false);
           }
         );
         curatorUnsubMap.set(userId, sourceDeckListenerUnsub);
