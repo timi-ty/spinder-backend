@@ -1,8 +1,6 @@
-import { applicationDefault, cert, initializeApp } from "firebase-admin/app";
+import { cert, initializeApp } from "firebase-admin/app";
 import { Auth, getAuth } from "firebase-admin/auth";
 import {
-  AggregateField,
-  AggregateQuerySnapshot,
   Firestore,
   QuerySnapshot,
   getFirestore,
@@ -125,9 +123,10 @@ async function batchSetFirestoreCollection(
     const docRef = colRef.doc(key);
     batch.set(docRef, value);
   });
-  await batch.commit();
-  firebaseMarkerLog(`Batch set firebase docs at ${collectionPath}.`);
-  return;
+  const writeResult = await batch.commit();
+  firebaseMarkerLog(
+    `Batch set ${writeResult.length} firestore docs at ${collectionPath}.`
+  );
 }
 
 async function getFirestoreDoc<T>(docPath: string): Promise<T | null> {

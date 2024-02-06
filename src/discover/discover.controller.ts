@@ -6,7 +6,6 @@ import {
   updateOrCreateSpinderUserData,
   setSpinderUserData,
 } from "../user/user.utils.js";
-import { discoverLogger } from "../utils/logger.js";
 import { getCountOrAllOwnedSpotifyPlaylists } from "./discover.util.js";
 
 //Get the list of currently allowed discover destinations. The user's destination selection should be marked in the response.
@@ -93,12 +92,6 @@ async function getDiscoverSourceTypes(
 
 //Using source type, search spotify for matching discover sources.
 async function searchDiscoverSources(
-  req: Request,
-  res: Response,
-  next: (error: SpinderError) => void
-) {}
-
-async function getDiscoverStack(
   req: Request,
   res: Response,
   next: (error: SpinderError) => void

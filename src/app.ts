@@ -15,7 +15,7 @@ import {
   interceptRequestMismatch,
 } from "./app.middleware.js";
 import { appLogger } from "./utils/logger.js";
-import { startStackService } from "./services/stack.service.js";
+import { startDeckService } from "./services/deck.service.js";
 
 //TODO: console.log every error that you catch in a try/catch block and forward just a descriptive string message of the error source to the error handler middleware.
 
@@ -51,7 +51,7 @@ assembleDiscoverRouter(express.Router());
 addDiscoverRouter(app);
 /**********Discover End************/
 
-startStackService();
+startDeckService();
 
 app.use(catchUndefined);
 app.use(catchError);
