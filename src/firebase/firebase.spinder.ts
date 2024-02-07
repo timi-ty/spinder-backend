@@ -107,7 +107,7 @@ function listenToFirestoreCollection(
   return unsubscribe;
 }
 
-async function batchSetFirestoreCollection(
+async function batchSetFirestoreDocs(
   collectionPath: string,
   collectionData: Map<string, object>
 ): Promise<void> {
@@ -126,6 +126,28 @@ async function batchSetFirestoreCollection(
   const writeResult = await batch.commit();
   firebaseMarkerLog(
     `Batch set ${writeResult.length} firestore docs at ${collectionPath}.`
+  );
+}
+
+async function batchDeleteFirestoreDocs(
+  collectionPath: string,
+  docIds: string[]
+): Promise<void> {
+  if (!firestore) {
+    throw new Error(
+      "Failed to set collection. firestore object does not exist. Call startFirebaseApp before calling any other functions."
+    );
+  }
+
+  const batch = firestore.batch();
+  const colRef = firestore.collection(collectionPath);
+  docIds.forEach((id) => {
+    const docRef = colRef.doc(id);
+    batch.delete(docRef);
+  });
+  const writeResult = await batch.commit();
+  firebaseMarkerLog(
+    `Batch deleted ${writeResult.length} firestore docs at ${collectionPath}.`
   );
 }
 
@@ -216,7 +238,8 @@ export {
   getFirestoreCollection,
   getFirestoreCollectionSize,
   listenToFirestoreCollection,
-  batchSetFirestoreCollection,
+  batchSetFirestoreDocs,
+  batchDeleteFirestoreDocs,
   getFirestoreDoc,
   setFirestoreDoc,
   deleteFirestoreDoc,

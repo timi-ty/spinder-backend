@@ -3,7 +3,7 @@ interface DeckItem {
   image: string;
   previewUrl: string;
   trackName: string;
-  trackUrl: string;
+  trackUri: string;
   artistName: string;
-  artistUrl: string;
+  artistUri: string;
 }

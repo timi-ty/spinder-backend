@@ -4,7 +4,6 @@ import querystring from "querystring";
 import { v4 as uuidv4 } from "uuid";
 import { Request, Response } from "express";
 import { createFirebaseCustomToken } from "../firebase/firebase.spinder.js";
-import { requestSpotifyAuthToken } from "../auth/auth.utils.js";
 import { updateOrCreateSpinderUserData } from "../user/user.utils.js";
 import { FinalizeLoginData } from "./login.model.js";
 import {
@@ -15,8 +14,12 @@ import {
   oneYearInMillis,
 } from "../utils/utils.js";
 import { loginLogger } from "../utils/logger.js";
-import { getSpotifyUserProfile } from "../spotify/spotify.api.js";
+import {
+  getSpotifyUserProfile,
+  requestSpotifyAccessToken,
+} from "../spotify/spotify.api.js";
 import { SpotifyUserProfileData } from "../spotify/spotify.model.js";
+import { spotifyTokenToAuthToken } from "../auth/auth.utils.js";
 
 //TODO: Purge this Map of stale entries at intervals.
 const spotifyLoginStates: Map<string, string> = new Map(); //This map associates 5 minute cookies to Spotify login state. When a login callback is received, the callback req MUST have a cookie that exists in this map and the content MUST be the corresponding state.
@@ -25,7 +28,7 @@ const spotifyLoginStates: Map<string, string> = new Map(); //This map associates
 function startLoginWithSpotify(req: Request, res: Response) {
   const state = randomstring.generate(16);
   const scope =
-    "user-read-private user-read-email playlist-read-private user-top-read";
+    "user-read-private user-read-email playlist-read-private user-top-read playlist-modify-public playlist-modify-private";
 
   const uniqueId = uuidv4();
   spotifyLoginStates.set(uniqueId, state); //Associate every login request with a unique id.
@@ -66,7 +69,8 @@ async function finishLoginWithSpotify(
 
   if (acceptRequest) {
     try {
-      const authToken = await requestSpotifyAuthToken(code);
+      const spotifyToken = await requestSpotifyAccessToken(code);
+      const authToken = spotifyTokenToAuthToken(spotifyToken);
       res.cookie("spinder_spotify_access_token", authToken.accessToken, {
         maxAge: authToken.maxAge,
         httpOnly: true,

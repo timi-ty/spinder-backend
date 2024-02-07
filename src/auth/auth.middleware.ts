@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
 import { HttpStatusCode } from "axios";
 import { oneYearInMillis, SpinderError } from "../utils/utils.js";
-import { refreshSpotifyAuthToken } from "./auth.utils.js";
 import { exchangeFirebaseIdTokenForUserId } from "../firebase/firebase.spinder.js";
 import { authLogger } from "../utils/logger.js";
+import { refreshSpotifyAccessToken } from "../spotify/spotify.api.js";
+import { spotifyTokenToAuthToken } from "./auth.utils.js";
 
 const BEARER = "Bearer";
 
@@ -18,7 +19,8 @@ async function ensureSpotifyAccessToken(
   if (accessToken) next();
   else if (refreshToken) {
     try {
-      const authToken = await refreshSpotifyAuthToken(refreshToken);
+      const spotifyToken = await refreshSpotifyAccessToken(refreshToken);
+      const authToken = spotifyTokenToAuthToken(spotifyToken);
 
       req.cookies.spinder_spotify_access_token = authToken.accessToken;
 

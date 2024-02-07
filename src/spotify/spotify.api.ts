@@ -1,13 +1,85 @@
-import { HttpStatusCode } from "axios";
+import axios, { HttpStatusCode } from "axios";
 import {
   SpotifyUserProfileData,
   SpotifyErrorResponse,
   SpotifyPlaylists,
   SpotifyTopTracks,
+  SpotifyToken,
 } from "./spotify.model.js";
-import { spotifyLogger, spotifyMarkerLog } from "../utils/logger.js";
+import { spotifyLogger } from "../utils/logger.js";
 
 // Always remember to check that the required scopes are requested when using a new Spotify API.
+
+async function requestSpotifyAccessToken(code: any): Promise<SpotifyToken> {
+  var authOptions = {
+    url: "https://accounts.spotify.com/api/token",
+    form: {
+      code: code,
+      redirect_uri: process.env.SPOTIFY_REDIRECT_URI,
+      grant_type: "authorization_code",
+    },
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      Authorization:
+        "Basic " +
+        Buffer.from(
+          process.env.SPOTIFY_CLIENT_ID +
+            ":" +
+            process.env.SPOTIFY_CLIENT_SECRET
+        ).toString("base64"),
+    },
+    json: true,
+  };
+
+  const response = await axios.post(authOptions.url, authOptions.form, {
+    headers: authOptions.headers,
+  });
+
+  if (response.status === HttpStatusCode.Ok) {
+    return response.data;
+  } else {
+    throw new Error(
+      `Spotify rejected login - Status: ${response.status}, Message - ${response.data.error.message}`
+    );
+  }
+}
+
+async function refreshSpotifyAccessToken(
+  refreshToken: string
+): Promise<SpotifyToken> {
+  var authOptions = {
+    url: "https://accounts.spotify.com/api/token",
+    form: {
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+    },
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      Authorization:
+        "Basic " +
+        Buffer.from(
+          process.env.SPOTIFY_CLIENT_ID +
+            ":" +
+            process.env.SPOTIFY_CLIENT_SECRET
+        ).toString("base64"),
+    },
+    json: true,
+  };
+
+  const response = await axios.post(authOptions.url, authOptions.form, {
+    headers: authOptions.headers,
+  });
+
+  if (response.status === HttpStatusCode.Ok) {
+    const spotifyToken: SpotifyToken = response.data;
+    spotifyToken.refresh_token = refreshToken; //Spotify does not issue a new refresh token.
+    return spotifyToken;
+  } else {
+    throw new Error(
+      `Spotify rejected refresh login - Status: ${response.status}, Message - ${response.data.error.message}`
+    );
+  }
+}
 
 async function getSpotifyUserProfile(
   accessToken: string
@@ -77,8 +149,58 @@ async function getSpotifyUserTopTracks(
   }
 }
 
+function addTracksToSpotifyUserPlaylist(
+  accessToken: string,
+  playlistId: string,
+  uris: string[],
+  onTracksAdded: () => void = () => {}
+) {
+  spotifyLogger.debug(`Adding to user spotify playlist ${playlistId}`);
+
+  var requestOptions = {
+    url: `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
+    form: {
+      uris: uris,
+    },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + accessToken,
+    },
+    json: true,
+  };
+
+  axios
+    .post(requestOptions.url, requestOptions.form, {
+      headers: requestOptions.headers,
+    })
+    .then((response) => {
+      if (response.status === HttpStatusCode.Created) {
+        spotifyLogger.debug(
+          `Added ${uris.length} tracks to playlist ${playlistId}.`
+        );
+        onTracksAdded();
+        return;
+      }
+    })
+    .catch((error) => {
+      if (error.response) {
+        const spotifyErrorResponse: SpotifyErrorResponse = error.response.data;
+        spotifyLogger.error(
+          `Error adding tracks to playlist for user. Status: ${
+            spotifyErrorResponse.error.status
+          }, Message: ${JSON.stringify(spotifyErrorResponse.error.message)}`
+        );
+      } else {
+        console.log(error);
+      }
+    });
+}
+
 export {
   getSpotifyUserProfile,
   getSpotifyUserPlaylists,
   getSpotifyUserTopTracks,
+  addTracksToSpotifyUserPlaylist,
+  requestSpotifyAccessToken,
+  refreshSpotifyAccessToken,
 };

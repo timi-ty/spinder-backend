@@ -7,6 +7,14 @@ interface SpotifyErrorResponse {
   error: SpotifyError;
 }
 
+interface SpotifyToken {
+  access_token: string;
+  token_type: string;
+  scope: string;
+  expires_in: number;
+  refresh_token: string;
+}
+
 interface ExplicitContent {
   filter_enabled: boolean;
   filter_locked: boolean;
@@ -159,4 +167,5 @@ export {
   SpotifyUserProfileData,
   SpotifyPlaylists,
   SpotifyTopTracks,
+  SpotifyToken,
 };

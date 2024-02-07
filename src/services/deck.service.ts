@@ -1,18 +1,23 @@
 import {
   attachPresenceWatcher,
-  batchSetFirestoreCollection,
+  batchDeleteFirestoreDocs,
+  batchSetFirestoreDocs,
   deleteFirestoreDoc,
   getFirestoreCollectionSize,
   listenToFirestoreCollection,
   setFirestoreDoc,
 } from "../firebase/firebase.spinder.js";
-import { getSpotifyUserTopTracks } from "../spotify/spotify.api.js";
+import {
+  addTracksToSpotifyUserPlaylist,
+  getSpotifyUserTopTracks,
+} from "../spotify/spotify.api.js";
 import { getSpinderUserData } from "../user/user.utils.js";
 import { deckLogger } from "../utils/logger.js";
 
 const sourceDeckThresholdSize = 50; // The deck service tries to maintain each user's sourceDeck at this size.
 const sourceDeckMinSize = 20;
-const curatorUnsubMap: Map<string, () => void> = new Map();
+const sourceDeckListenerMap: Map<string, () => void> = new Map();
+const yesDeckListenerMap: Map<string, () => void> = new Map();
 const deckFillerSet: Set<string> = new Set();
 
 function startDeckService() {
@@ -86,9 +91,9 @@ async function progressivelyFillUpSourceDeck(
           topTrack.album.images.length > 0 ? topTrack.album.images[0].url : "",
         previewUrl: topTrack.preview_url,
         trackName: topTrack.name,
-        trackUrl: topTrack.uri,
+        trackUri: topTrack.uri,
         artistName: topTrack.artists[0].name,
-        artistUrl: topTrack.artists[0].uri,
+        artistUri: topTrack.artists[0].uri,
         trackId: topTrack.id,
       });
     });
@@ -104,10 +109,7 @@ async function progressivelyFillUpSourceDeck(
         deckNewTracksMap
       )}`
     );
-    await batchSetFirestoreCollection(
-      sourceDeckCollectionPath,
-      deckNewTracksMap
-    );
+    await batchSetFirestoreDocs(sourceDeckCollectionPath, deckNewTracksMap);
     progressivelyFillUpSourceDeck(userId, true);
   } catch (error) {
     //Filling up a user's deck is an important but expendable process since it runs repeatedly. If it fails, it fails quietly and takes no further action.
@@ -129,35 +131,82 @@ async function attachCurator() {
         const userId = change.doc.id;
         deckLogger.debug(`Found new active user ${userId}.`);
         progressivelyFillUpSourceDeck(userId, false); //Dispatch for different users without awaiting.
-        const sourceDeckCollectionPath = `users/${userId}/sourceDeck`;
-        const sourceDeckListenerUnsub = listenToFirestoreCollection(
-          sourceDeckCollectionPath,
-          (snapshot) => {
-            var hasRemoval = false;
-            snapshot.docChanges().forEach((change) => {
-              if (change.type === "removed") {
-                deckLogger.debug(
-                  `User ${userId} removed ${change.doc.id} from their source deck.`
-                );
-                hasRemoval = true;
-              }
-            });
-            if (hasRemoval && snapshot.size < sourceDeckMinSize)
-              progressivelyFillUpSourceDeck(userId, false);
-          }
-        );
-        curatorUnsubMap.set(userId, sourceDeckListenerUnsub);
+        attachSourceDeckListener(userId);
+        attachYesDeckListener(userId);
       }
       if (change.type === "removed") {
         const userId = change.doc.id;
         deckLogger.debug(
-          `Lost formerly active user ${userId}. Unsubscribing their source deck listener...`
+          `Lost formerly active user ${userId}. Unsubscribing their deck listeners...`
         );
-        const unsub = curatorUnsubMap.get(userId) || null;
-        if (unsub) unsub();
+        const unsubSource = sourceDeckListenerMap.get(userId) || null;
+        const unsubYes = yesDeckListenerMap.get(userId) || null;
+        if (unsubSource) unsubSource();
+        if (unsubYes) unsubYes();
       }
     });
   });
+}
+
+function attachSourceDeckListener(userId: string) {
+  const sourceDeckCollectionPath = `users/${userId}/sourceDeck`;
+  const sourceDeckListenerUnsub = listenToFirestoreCollection(
+    sourceDeckCollectionPath,
+    (snapshot) => {
+      var hasRemoval = false;
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "removed") {
+          deckLogger.debug(
+            `User ${userId} removed ${change.doc.id} from their source deck.`
+          );
+          hasRemoval = true;
+        }
+      });
+      if (hasRemoval && snapshot.size < sourceDeckMinSize)
+        progressivelyFillUpSourceDeck(userId, false);
+    }
+  );
+  sourceDeckListenerMap.set(userId, sourceDeckListenerUnsub);
+}
+
+function attachYesDeckListener(userId: string) {
+  const yesDeckCollectionPath = `users/${userId}/yesDeck`;
+  const yesDeckListenerUnsub = listenToFirestoreCollection(
+    yesDeckCollectionPath,
+    async (snapshot) => {
+      const newTracks: DeckItem[] = [];
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          deckLogger.debug(
+            `User ${userId} added ${change.doc.id} to their yes deck.`
+          );
+          newTracks.push(change.doc.data() as DeckItem);
+        }
+      });
+      if (newTracks.length < 1) return;
+      try {
+        const spinderUserData = await getSpinderUserData(userId);
+        const onTracksAdded = () => {
+          batchDeleteFirestoreDocs(
+            yesDeckCollectionPath,
+            newTracks.map((track) => track.trackId)
+          );
+        };
+        addTracksToSpotifyUserPlaylist(
+          spinderUserData?.accessToken || "",
+          spinderUserData?.selectedDiscoverDestination || "",
+          newTracks.map((track) => track.trackUri),
+          onTracksAdded
+        );
+      } catch (error) {
+        console.error(error);
+        deckLogger.warn(
+          `An error occured while saving the yes deck for user ${userId} to their selected playlist. Aborting this attempt...`
+        );
+      }
+    }
+  );
+  yesDeckListenerMap.set(userId, yesDeckListenerUnsub);
 }
 
 export { startDeckService };
