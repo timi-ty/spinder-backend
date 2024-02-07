@@ -21,8 +21,7 @@ function assembleLoginRouter(router: Router) {
   loginRouter.get("/callback", finishLoginWithSpotify);
 
   //Finalize login requires Spotify access token, this ensures that it is available.
-  loginRouter.use(ensureSpotifyAccessToken);
-
+  loginRouter.use(ensureSpotifyAccessToken(false));
   //The response of this request marks the completion of the login process.
   loginRouter.get("/finalize", finalizeLogin);
 

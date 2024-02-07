@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { SpinderError, okResponse } from "../utils/utils.js";
 import { HttpStatusCode } from "axios";
-import { userLogger } from "../utils/logger.js";
 import { getSpotifyUserProfile } from "../spotify/spotify.api.js";
 import { SpotifyUserProfileData } from "../spotify/spotify.model.js";
 

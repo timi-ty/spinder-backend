@@ -12,8 +12,7 @@ function assembleUserRouter(router: Router) {
   userRouter.use(userRequestLogger);
 
   //returnSpotifyUserProfile requires Spotify access token, this ensures that it is available.
-  userRouter.use(ensureSpotifyAccessToken);
-
+  userRouter.use(ensureSpotifyAccessToken(false));
   userRouter.get("/spotify", returnSpotifyUserProfile);
 
   //Handle uer errors.
