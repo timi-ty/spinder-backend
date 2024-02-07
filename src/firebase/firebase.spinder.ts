@@ -1,5 +1,5 @@
 import { cert, initializeApp } from "firebase-admin/app";
-import { Auth, getAuth } from "firebase-admin/auth";
+import { Auth, DecodedIdToken, getAuth } from "firebase-admin/auth";
 import {
   Firestore,
   QuerySnapshot,
@@ -47,9 +47,9 @@ async function createFirebaseCustomToken(userId: string) {
   return customToken;
 }
 
-async function exchangeFirebaseIdTokenForUserId(
+async function verifyAndDecodeFirebaseIdToken(
   idToken: string
-): Promise<string> {
+): Promise<DecodedIdToken> {
   if (!auth) {
     throw new Error(
       "Failed to verify id token. Auth object does not exist. Call startFirebaseApp before calling any other functions."
@@ -57,7 +57,7 @@ async function exchangeFirebaseIdTokenForUserId(
   }
 
   const decodedToken = await auth.verifyIdToken(idToken, true);
-  return decodedToken.uid;
+  return decodedToken;
 }
 
 async function getFirestoreCollection(
@@ -234,7 +234,7 @@ function detachAllPresenceWatchers() {
 export {
   startFirebaseApp,
   createFirebaseCustomToken,
-  exchangeFirebaseIdTokenForUserId,
+  verifyAndDecodeFirebaseIdToken,
   getFirestoreCollection,
   getFirestoreCollectionSize,
   listenToFirestoreCollection,

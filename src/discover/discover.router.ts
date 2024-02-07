@@ -21,7 +21,7 @@ function assembleDiscoverRouter(router: Router) {
   discoverRouter.use(discoverRequestLogger);
 
   //All discover endpoints require the user to be fully authenticated.
-  discoverRouter.use(ensureSpotifyAccessToken);
+  discoverRouter.use(ensureSpotifyAccessToken(false));
   discoverRouter.use(ensureFirebaseAuthenticatedUser);
 
   discoverRouter.get("/source-types", getDiscoverSourceTypes);

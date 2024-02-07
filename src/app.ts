@@ -16,6 +16,7 @@ import {
 } from "./app.middleware.js";
 import { appLogger } from "./utils/logger.js";
 import { startDeckService } from "./services/deck.service.js";
+import { addAuthRouter, assembleAuthRouter } from "./auth/auth.router.js";
 
 //TODO: console.log every error that you catch in a try/catch block and forward just a descriptive string message of the error source to the error handler middleware.
 
@@ -40,6 +41,11 @@ app.use(interceptRequestMismatch);
 assembleLoginRouter(express.Router());
 addLoginRouter(app);
 /**********Login End************/
+
+/**********Auth Start**********/
+assembleAuthRouter(express.Router());
+addAuthRouter(app);
+/**********Auth End************/
 
 /**********User Start**********/
 assembleUserRouter(express.Router());

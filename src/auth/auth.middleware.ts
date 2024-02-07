@@ -1,43 +1,53 @@
 import { Request, Response } from "express";
 import { HttpStatusCode } from "axios";
 import { oneYearInMillis, SpinderError } from "../utils/utils.js";
-import { exchangeFirebaseIdTokenForUserId } from "../firebase/firebase.spinder.js";
+import { verifyAndDecodeFirebaseIdToken } from "../firebase/firebase.spinder.js";
 import { authLogger } from "../utils/logger.js";
 import { refreshSpotifyAccessToken } from "../spotify/spotify.api.js";
 import { spotifyTokenToAuthToken } from "./auth.utils.js";
 
 const BEARER = "Bearer";
 
-async function ensureSpotifyAccessToken(
-  req: Request,
-  res: Response,
-  next: any
-) {
-  const accessToken = req.cookies.spinder_spotify_access_token || null;
-  const refreshToken = req.cookies.spinder_spotify_refresh_token || null;
+function ensureSpotifyAccessToken(
+  forceRefresh: boolean
+): (req: Request, res: Response, next: any) => void {
+  return async (req: Request, res: Response, next: any) => {
+    const accessToken = req.cookies.spinder_spotify_access_token || null;
+    const refreshToken = req.cookies.spinder_spotify_refresh_token || null;
 
-  if (accessToken) next();
-  else if (refreshToken) {
-    try {
-      const spotifyToken = await refreshSpotifyAccessToken(refreshToken);
-      const authToken = spotifyTokenToAuthToken(spotifyToken);
+    if (accessToken && !forceRefresh) next();
+    else if (refreshToken) {
+      try {
+        const spotifyToken = await refreshSpotifyAccessToken(refreshToken);
+        const authToken = spotifyTokenToAuthToken(spotifyToken);
 
-      req.cookies.spinder_spotify_access_token = authToken.accessToken;
+        req.cookies.spinder_spotify_access_token = authToken.accessToken;
+        req.cookies.spinder_spotify_access_token_expiry = authToken.maxAge;
 
-      res.cookie("spinder_spotify_access_token", authToken.accessToken, {
-        maxAge: authToken.maxAge,
-        httpOnly: true,
-      });
-      res.cookie("spinder_spotify_refresh_token", authToken.refreshToken, {
-        maxAge: oneYearInMillis,
-        httpOnly: true,
-      });
-      authLogger.debug(
-        `Finished refresh login: Token - ${authToken.accessToken}, Expiry - ${authToken.maxAge}`
-      );
-      next();
-    } catch (error) {
-      console.error(error);
+        res.cookie("spinder_spotify_access_token", authToken.accessToken, {
+          maxAge: authToken.maxAge,
+          httpOnly: true,
+        });
+        res.cookie("spinder_spotify_refresh_token", authToken.refreshToken, {
+          maxAge: oneYearInMillis,
+          httpOnly: true,
+        });
+        authLogger.debug(
+          `Finished refresh login: Token - ${authToken.accessToken}, Expiry - ${authToken.maxAge}`
+        );
+        next();
+      } catch (error) {
+        console.error(error);
+        next(
+          new SpinderError(
+            HttpStatusCode.Unauthorized,
+            new Error(
+              `Failed to refresh spotify access token. Refresh token: ${refreshToken}`
+            )
+          )
+        );
+      }
+    } else {
       next(
         new SpinderError(
           HttpStatusCode.Unauthorized,
@@ -47,16 +57,7 @@ async function ensureSpotifyAccessToken(
         )
       );
     }
-  } else {
-    next(
-      new SpinderError(
-        HttpStatusCode.Unauthorized,
-        new Error(
-          `Failed to refresh spotify access token. Refresh token: ${refreshToken}`
-        )
-      )
-    );
-  }
+  };
 }
 
 async function ensureFirebaseAuthenticatedUser(
@@ -75,8 +76,10 @@ async function ensureFirebaseAuthenticatedUser(
 
   if (idToken) {
     try {
-      const userId = await exchangeFirebaseIdTokenForUserId(idToken);
-      req.cookies.userId = userId;
+      const decodedToken = await verifyAndDecodeFirebaseIdToken(idToken);
+      req.cookies.userId = decodedToken.uid;
+      req.cookies.firebase_token = idToken;
+      req.cookies.firebase_token_expiry = decodedToken.exp;
       authLogger.debug(
         `Ensured that the user with id: ${req.cookies.userId} is authorized.`
       );
@@ -104,4 +107,27 @@ async function ensureFirebaseAuthenticatedUser(
   }
 }
 
-export { ensureSpotifyAccessToken, ensureFirebaseAuthenticatedUser };
+function authRequestLogger(req: Request, res: Response, next: () => void) {
+  authLogger.debug(`Recieved an /auth ${req.method} request to ${req.url}`);
+  next();
+}
+
+function authErrorHandler(
+  err: SpinderError,
+  req: Request,
+  res: Response,
+  next: any
+) {
+  authLogger.error(
+    `Origin Url: ${req.originalUrl}, Message: ${err.error.message}`
+  );
+  authLogger.error(err.error.stack);
+  res.status(err.status).json(err);
+}
+
+export {
+  ensureSpotifyAccessToken,
+  ensureFirebaseAuthenticatedUser,
+  authRequestLogger,
+  authErrorHandler,
+};
