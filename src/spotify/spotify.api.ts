@@ -10,7 +10,7 @@ import { spotifyLogger } from "../utils/logger.js";
 
 // Always remember to check that the required scopes are requested when using a new Spotify API.
 
-async function requestSpotifyAccessToken(code: any): Promise<SpotifyToken> {
+async function requestSpotifyAccessToken(code: string): Promise<SpotifyToken> {
   var authOptions = {
     url: "https://accounts.spotify.com/api/token",
     form: {

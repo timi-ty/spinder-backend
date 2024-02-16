@@ -6,6 +6,7 @@ import {
 import {
   getDiscoverDestinations,
   getDiscoverSourceTypes,
+  setDiscoverDestination,
 } from "./discover.controller.js";
 import {
   ensureFirebaseAuthenticatedUser,
@@ -27,6 +28,8 @@ function assembleDiscoverRouter(router: Router) {
   discoverRouter.get("/source-types", getDiscoverSourceTypes);
 
   discoverRouter.get("/destinations", getDiscoverDestinations);
+
+  discoverRouter.post("/destination", setDiscoverDestination);
 
   //Handle login errors.
   discoverRouter.use(discoverErrorHandler);

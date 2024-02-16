@@ -23,9 +23,14 @@ interface DiscoverDestinationData {
   discoverDestinationPlaylists: DiscoverDestinationPlaylist[];
 }
 
+interface SetDiscoverDestinationResponse {
+  selectedDestinationId: string;
+}
+
 export {
   DiscoverSourceType,
   DiscoverSourceTypesData,
   DiscoverDestinationPlaylist,
   DiscoverDestinationData,
+  SetDiscoverDestinationResponse,
 };

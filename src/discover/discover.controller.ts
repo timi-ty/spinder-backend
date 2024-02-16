@@ -1,12 +1,19 @@
 import { Request, Response } from "express";
 import { SpinderError, okResponse } from "../utils/utils.js";
-import { DiscoverSourceTypesData } from "./discover.model.js";
+import {
+  DiscoverSourceTypesData,
+  SetDiscoverDestinationResponse,
+} from "./discover.model.js";
 import { HttpStatusCode } from "axios";
 import {
   updateOrCreateSpinderUserData,
   setSpinderUserData,
 } from "../user/user.utils.js";
 import { getCountOrAllOwnedSpotifyPlaylists } from "./discover.util.js";
+import {
+  setFirestoreDoc,
+  updateFirestoreDoc,
+} from "../firebase/firebase.spinder.js";
 
 //Get the list of currently allowed discover destinations. The user's destination selection should be marked in the response.
 async function getDiscoverDestinations(
@@ -56,6 +63,34 @@ async function searchDiscoverDestinations(
   next: (error: SpinderError) => void
 ) {}
 
+async function setDiscoverDestination(
+  req: Request,
+  res: Response,
+  next: (error: SpinderError) => void
+) {
+  const destinationId = req.query.destinationId || null;
+  const userId = req.cookies.userId || null;
+  const data = { selectedDiscoverDestination: destinationId };
+  try {
+    if (!destinationId) throw new Error("Invalid destinationId."); //Replace with more sophisticated validation.
+    await updateFirestoreDoc(`users/${userId}`, data);
+    const response: SetDiscoverDestinationResponse = {
+      selectedDestinationId: destinationId as string, //This hack should become unecessary if destinationId is properly validated.
+    };
+    okResponse(req, res, response);
+  } catch (error) {
+    console.error(error);
+    next(
+      new SpinderError(
+        HttpStatusCode.InternalServerError,
+        new Error(
+          "Failed to set desinationId. This is most likely a db write failure."
+        )
+      )
+    );
+  }
+}
+
 //Get the list of currently allowed discover source types from the Spinder App Database. The user's source type selection should be marked in the response.
 async function getDiscoverSourceTypes(
   req: Request,
@@ -102,4 +137,5 @@ export {
   searchDiscoverSources,
   getDiscoverDestinations,
   searchDiscoverDestinations,
+  setDiscoverDestination,
 };

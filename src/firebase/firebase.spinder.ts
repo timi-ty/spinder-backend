@@ -184,6 +184,21 @@ async function setFirestoreDoc(
   );
 }
 
+async function updateFirestoreDoc(docPath: string, data: any) {
+  if (!firestore) {
+    throw new Error(
+      "Failed to update doc data. firestore object does not exist. Call startFirebaseApp before calling any other functions."
+    );
+  }
+
+  const docRef = firestore.doc(docPath);
+  await docRef.update(data);
+
+  firebaseMarkerLog(
+    `Updated firebase doc at ${docPath}, data - ${JSON.stringify(data)}`
+  );
+}
+
 async function deleteFirestoreDoc(docPath: string) {
   if (!firestore) {
     throw new Error(
@@ -242,6 +257,7 @@ export {
   batchDeleteFirestoreDocs,
   getFirestoreDoc,
   setFirestoreDoc,
+  updateFirestoreDoc,
   deleteFirestoreDoc,
   attachPresenceWatcher,
   detachAllPresenceWatchers,

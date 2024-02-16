@@ -69,7 +69,7 @@ async function finishLoginWithSpotify(
 
   if (acceptRequest) {
     try {
-      const spotifyToken = await requestSpotifyAccessToken(code);
+      const spotifyToken = await requestSpotifyAccessToken(code as string); //Properly validate code to avoid this hack.
       const authToken = spotifyTokenToAuthToken(spotifyToken);
       res.cookie("spinder_spotify_access_token", authToken.accessToken, {
         maxAge: authToken.maxAge,
