@@ -1,14 +1,18 @@
-import { DiscoverSourceType } from "../discover/discover.model";
+import {
+  DiscoverDestination,
+  DiscoverSource,
+  emptyDiscoverDestination,
+} from "../discover/discover.model.js";
 
 interface SpinderUserData {
-  selectedDiscoverSourceType: DiscoverSourceType;
-  selectedDiscoverDestination: string;
+  selectedDiscoverSource: DiscoverSource;
+  selectedDiscoverDestination: DiscoverDestination;
   accessToken: string;
 }
 
 const defaultSpinderUserData: SpinderUserData = {
-  selectedDiscoverSourceType: "Anything Me",
-  selectedDiscoverDestination: "",
+  selectedDiscoverSource: "Anything Me",
+  selectedDiscoverDestination: emptyDiscoverDestination,
   accessToken: "",
 };
 

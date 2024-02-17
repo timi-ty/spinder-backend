@@ -194,7 +194,7 @@ function attachYesDeckListener(userId: string) {
         };
         addTracksToSpotifyUserPlaylist(
           spinderUserData?.accessToken || "",
-          spinderUserData?.selectedDiscoverDestination || "",
+          spinderUserData?.selectedDiscoverDestination.id || "",
           newTracks.map((track) => track.trackUri),
           onTracksAdded
         );

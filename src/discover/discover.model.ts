@@ -1,36 +1,39 @@
-type DiscoverSourceType =
+type DiscoverSource =
   | "Anything Me"
   | "Following"
   | "Playlist"
   | "Artiste"
   | "Keyword";
 
-interface DiscoverSourceTypesData {
-  selectedSourceType: DiscoverSourceType;
-  sourceTypes: DiscoverSourceType[];
+interface DiscoverSourceData {
+  selectedSource: DiscoverSource;
+  availableSources: DiscoverSource[];
 }
 
-interface DiscoverDestinationPlaylist {
-  name: string; // Playlist name.
-  image: string; // Playlist image.
-  id: string; //playlist id.
+//For now, destination has to be a Spotify Playlist.
+interface DiscoverDestination {
+  name: string;
+  image: string;
+  id: string;
 }
+
+const emptyDiscoverDestination: DiscoverDestination = {
+  name: "",
+  image: "",
+  id: "",
+};
 
 interface DiscoverDestinationData {
-  selectedDestinationId: string;
+  selectedDestination: DiscoverDestination;
   offset: number; // The index at which the server terminated it's search for valid discover destinations (i.e. user owned spotify playlists) in the total user playlists.
   total: number; // The total number of user playlists. The server searches these playlists for discover destinations (i.e. user owned playlists).
-  discoverDestinationPlaylists: DiscoverDestinationPlaylist[];
-}
-
-interface SetDiscoverDestinationResponse {
-  selectedDestinationId: string;
+  availableDestinations: DiscoverDestination[];
 }
 
 export {
-  DiscoverSourceType,
-  DiscoverSourceTypesData,
-  DiscoverDestinationPlaylist,
+  DiscoverSource,
+  DiscoverSourceData,
+  DiscoverDestination,
+  emptyDiscoverDestination,
   DiscoverDestinationData,
-  SetDiscoverDestinationResponse,
 };

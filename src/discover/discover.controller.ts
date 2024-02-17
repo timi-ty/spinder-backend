@@ -1,9 +1,6 @@
 import { Request, Response } from "express";
 import { SpinderError, okResponse } from "../utils/utils.js";
-import {
-  DiscoverSourceTypesData,
-  SetDiscoverDestinationResponse,
-} from "./discover.model.js";
+import { DiscoverDestination, DiscoverSourceData } from "./discover.model.js";
 import { HttpStatusCode } from "axios";
 import {
   updateOrCreateSpinderUserData,
@@ -33,14 +30,14 @@ async function getDiscoverDestinations(
     );
     const userData = await updateOrCreateSpinderUserData(userId, accessToken);
     if (
-      userData.selectedDiscoverDestination === "" &&
-      discoverDestinations.discoverDestinationPlaylists.length > 0
+      userData.selectedDiscoverDestination.id === "" &&
+      discoverDestinations.availableDestinations.length > 0
     ) {
       userData.selectedDiscoverDestination =
-        discoverDestinations.discoverDestinationPlaylists[0].id;
+        discoverDestinations.availableDestinations[0];
       await setSpinderUserData(userId, userData);
     }
-    discoverDestinations.selectedDestinationId =
+    discoverDestinations.selectedDestination =
       userData.selectedDiscoverDestination;
     okResponse(req, res, discoverDestinations);
   } catch (error) {
@@ -74,8 +71,10 @@ async function setDiscoverDestination(
   try {
     if (!destinationId) throw new Error("Invalid destinationId."); //Replace with more sophisticated validation.
     await updateFirestoreDoc(`users/${userId}`, data);
-    const response: SetDiscoverDestinationResponse = {
-      selectedDestinationId: destinationId as string, //This hack should become unecessary if destinationId is properly validated.
+    const response: DiscoverDestination = {
+      name: "",
+      image: "",
+      id: destinationId as string, //This hack should become unecessary if destinationId is properly validated.
     };
     okResponse(req, res, response);
   } catch (error) {
@@ -101,9 +100,9 @@ async function getDiscoverSourceTypes(
     const accessToken = req.cookies.spinder_spotify_access_token || null;
     const userId = req.cookies.userId || null;
     const userData = await updateOrCreateSpinderUserData(userId, accessToken);
-    var discoverSourceTypesData: DiscoverSourceTypesData = {
-      selectedSourceType: userData.selectedDiscoverSourceType,
-      sourceTypes: [
+    var discoverSourceTypesData: DiscoverSourceData = {
+      selectedSource: userData.selectedDiscoverSource,
+      availableSources: [
         "Anything Me",
         "Following",
         "Playlist",

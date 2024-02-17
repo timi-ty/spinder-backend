@@ -1,6 +1,7 @@
 import {
   DiscoverDestinationData,
-  DiscoverDestinationPlaylist,
+  DiscoverDestination,
+  emptyDiscoverDestination,
 } from "./discover.model.js";
 import { discoverLogger } from "../utils/logger.js";
 import { SpotifyPlaylists } from "../spotify/spotify.model.js";
@@ -42,8 +43,8 @@ async function getCountOrAllOwnedSpotifyPlaylists(
   const discoverDestinationData: DiscoverDestinationData = {
     offset: spotifyPlaylists.offset,
     total: spotifyPlaylists.total,
-    discoverDestinationPlaylists: ownedSpotifyPlaylists,
-    selectedDestinationId: "", // Will be set by controller.
+    availableDestinations: ownedSpotifyPlaylists,
+    selectedDestination: emptyDiscoverDestination, // Will be set by controller.
   };
 
   return discoverDestinationData;
@@ -52,11 +53,11 @@ async function getCountOrAllOwnedSpotifyPlaylists(
 function filterOwnedSpotifyPlaylists(
   spotifyPlaylists: SpotifyPlaylists,
   userId: string
-): DiscoverDestinationPlaylist[] {
+): DiscoverDestination[] {
   const userOwnedPlaylists = spotifyPlaylists.items
     .filter((playlist) => playlist.owner.id === userId)
     .map((playlist) => {
-      const discoverDestinationPlaylist: DiscoverDestinationPlaylist = {
+      const discoverDestinationPlaylist: DiscoverDestination = {
         name: playlist.name,
         image: playlist.images.length > 0 ? playlist.images[0].url : "",
         id: playlist.id,
