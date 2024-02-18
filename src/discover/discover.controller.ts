@@ -7,10 +7,7 @@ import {
   setSpinderUserData,
 } from "../user/user.utils.js";
 import { getCountOrAllOwnedSpotifyPlaylists } from "./discover.util.js";
-import {
-  setFirestoreDoc,
-  updateFirestoreDoc,
-} from "../firebase/firebase.spinder.js";
+import { updateFirestoreDoc } from "../firebase/firebase.spinder.js";
 
 //Get the list of currently allowed discover destinations. The user's destination selection should be marked in the response.
 async function getDiscoverDestinations(
@@ -65,18 +62,15 @@ async function setDiscoverDestination(
   res: Response,
   next: (error: SpinderError) => void
 ) {
-  const destinationId = req.query.destinationId || null;
+  const destination = req.query.destination || null;
   const userId = req.cookies.userId || null;
-  const data = { selectedDiscoverDestination: destinationId };
   try {
-    if (!destinationId) throw new Error("Invalid destinationId."); //Replace with more sophisticated validation.
-    await updateFirestoreDoc(`users/${userId}`, data);
-    const response: DiscoverDestination = {
-      name: "",
-      image: "",
-      id: destinationId as string, //This hack should become unecessary if destinationId is properly validated.
-    };
-    okResponse(req, res, response);
+    if (!destination) throw new Error("Invalid destination."); //Replace with more sophisticated validation.
+    const data: DiscoverDestination = JSON.parse(destination as string); //as sring should no longer be needed if destination is properly validated.
+    await updateFirestoreDoc(`users/${userId}`, {
+      selectedDiscoverDestination: data,
+    });
+    okResponse(req, res, data);
   } catch (error) {
     console.error(error);
     next(

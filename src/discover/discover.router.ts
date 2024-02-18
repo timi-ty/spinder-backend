@@ -25,7 +25,7 @@ function assembleDiscoverRouter(router: Router) {
   discoverRouter.use(ensureSpotifyAccessToken(false));
   discoverRouter.use(ensureFirebaseAuthenticatedUser);
 
-  discoverRouter.get("/source-types", getDiscoverSourceTypes);
+  discoverRouter.get("/sources", getDiscoverSourceTypes);
 
   discoverRouter.get("/destinations", getDiscoverDestinations);
 
