@@ -7,12 +7,10 @@ import {
   listenToFirestoreCollection,
   setFirestoreDoc,
 } from "../firebase/firebase.spinder.js";
-import {
-  addTracksToSpotifyUserPlaylist,
-  getSpotifyUserTopTracks,
-} from "../spotify/spotify.api.js";
+import { addTracksToSpotifyUserPlaylist } from "../spotify/spotify.api.js";
 import { getSpinderUserData } from "../user/user.utils.js";
 import { deckLogger } from "../utils/logger.js";
+import { getDeckTracks } from "./deck.filler.js";
 
 const sourceDeckThresholdSize = 50; // The deck service tries to maintain each user's sourceDeck at this size.
 const sourceDeckMinSize = 20;
@@ -52,71 +50,61 @@ async function onUserInactive(userId: string) {
   }
 }
 
-async function progressivelyFillUpSourceDeck(
-  userId: string,
-  isRecursiveCall: boolean
-) {
-  if (!isRecursiveCall && deckFillerSet.has(userId)) {
+async function refillSourceDeck(userId: string) {
+  if (deckFillerSet.has(userId)) {
     deckLogger.warn(
-      `Another progressive deck filler is currently running for user ${userId}. Aborting this one...`
+      `Another deck filler is currently running for user ${userId}. Aborting this one...`
     );
     return;
   }
   deckFillerSet.add(userId);
 
   try {
-    //Starts the deck filling callback chain which ends when the user reaches their desired deck size.
     const sourceDeckCollectionPath = `users/${userId}/sourceDeck`;
     const sourceDeckSize = await getFirestoreCollectionSize(
       sourceDeckCollectionPath
     );
     deckLogger.debug(
-      `User ${userId} has ${sourceDeckSize} items in their deck.`
+      `User ${userId} had ${sourceDeckSize} items in their deck.`
     );
-    if (sourceDeckSize >= sourceDeckThresholdSize) {
+
+    if (sourceDeckSize > sourceDeckMinSize) {
+      deckLogger.debug(
+        `User ${userId}'s source deck is full enough. Aborting refill...`
+      );
       deckFillerSet.delete(userId);
       return;
     }
-    deckLogger.debug(
-      `User ${userId} is filling up to reach ${sourceDeckThresholdSize}.`
-    );
-    const accessToken = (await getSpinderUserData(userId))?.accessToken || "";
 
-    //The method to be called for getting deck new tracks will be an API from a sophisticated system that takes in the user's discover source type and spits out a list of tracks.
-    const deckNewTracks = await getSpotifyUserTopTracks(accessToken, 0);
-    const deckNewTracksMap: Map<string, DeckItem> = new Map();
-    deckNewTracks.items.forEach((topTrack) => {
-      deckNewTracksMap.set(topTrack.id, {
-        image:
-          topTrack.album.images.length > 0 ? topTrack.album.images[0].url : "",
-        previewUrl: topTrack.preview_url,
-        trackName: topTrack.name,
-        trackUri: topTrack.uri,
-        artistName: topTrack.artists[0].name,
-        artistUri: topTrack.artists[0].uri,
-        trackId: topTrack.id,
-      });
+    const userData = await getSpinderUserData(userId);
+
+    const newDeckItems = await getDeckTracks(
+      userData.selectedDiscoverSource,
+      userData.accessToken
+    );
+    const newDeckItemsMap: Map<string, DeckItem> = new Map();
+    newDeckItems.forEach((topTrack) => {
+      newDeckItemsMap.set(topTrack.trackId, topTrack);
     });
-    if (deckNewTracksMap.size < 1) {
+    if (newDeckItemsMap.size < 1) {
       throw new Error(
         "0 new tracks gotten from Spotify. The query may need to be adjusted."
       );
     }
     deckLogger.debug(
       `Adding ${
-        deckNewTracksMap.size
+        newDeckItemsMap.size
       } tracks to deck for user ${userId}, Tracks: ${JSON.stringify(
-        deckNewTracksMap
+        newDeckItemsMap
       )}`
     );
-    await batchSetFirestoreDocs(sourceDeckCollectionPath, deckNewTracksMap);
-    progressivelyFillUpSourceDeck(userId, true);
+    await batchSetFirestoreDocs(sourceDeckCollectionPath, newDeckItemsMap);
   } catch (error) {
     //Filling up a user's deck is an important but expendable process since it runs repeatedly. If it fails, it fails quietly and takes no further action.
     deckFillerSet.delete(userId);
     console.error(error);
     deckLogger.warn(
-      `An error occured while fillng up source deck for user ${userId}. Aborting this cycle...`
+      `An error occured while fillng up source deck for user ${userId}. Aborting this refill...`
     );
   }
   deckFillerSet.delete(userId);
@@ -124,13 +112,13 @@ async function progressivelyFillUpSourceDeck(
 
 async function attachCurator() {
   //Calls progressivelyFillUpDeck for every user in the activeUsers collection.
-  //Calls progressivelyFillUpDeck everytime a user in the activeUsers collection removes an item from their sourceDeck.
+  //Attaches listeners on the source deck and the yes deck.
   listenToFirestoreCollection("activeUsers", (snapshot) => {
     snapshot.docChanges().forEach(async (change) => {
       if (change.type === "added") {
         const userId = change.doc.id;
         deckLogger.debug(`Found new active user ${userId}.`);
-        progressivelyFillUpSourceDeck(userId, false); //Dispatch for different users without awaiting.
+        refillSourceDeck(userId); //Dispatch for different users without awaiting.
         attachSourceDeckListener(userId);
         attachYesDeckListener(userId);
       }
@@ -148,6 +136,7 @@ async function attachCurator() {
   });
 }
 
+//Calls progressivelyFillUpDeck if the user's  source tracks < sourceDeckMinSize and the user just removed a track.
 function attachSourceDeckListener(userId: string) {
   const sourceDeckCollectionPath = `users/${userId}/sourceDeck`;
   const sourceDeckListenerUnsub = listenToFirestoreCollection(
@@ -163,12 +152,13 @@ function attachSourceDeckListener(userId: string) {
         }
       });
       if (hasRemoval && snapshot.size < sourceDeckMinSize)
-        progressivelyFillUpSourceDeck(userId, false);
+        refillSourceDeck(userId);
     }
   );
   sourceDeckListenerMap.set(userId, sourceDeckListenerUnsub);
 }
 
+//Transfers tracks from the yes deck to the user's destination every time it detects a change.
 function attachYesDeckListener(userId: string) {
   const yesDeckCollectionPath = `users/${userId}/yesDeck`;
   const yesDeckListenerUnsub = listenToFirestoreCollection(

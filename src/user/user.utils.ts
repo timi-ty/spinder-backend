@@ -35,10 +35,12 @@ async function updateOrCreateSpinderUserData(
   }
 }
 
-async function getSpinderUserData(
-  userId: string
-): Promise<SpinderUserData | null> {
-  return getFirestoreDoc<SpinderUserData>(`users/${userId}`);
+async function getSpinderUserData(userId: string): Promise<SpinderUserData> {
+  const userData = await getFirestoreDoc<SpinderUserData>(`users/${userId}`);
+  if (!userData) {
+    throw new Error(`Data for user ${userId} does not exist.`);
+  }
+  return userData;
 }
 
 async function setSpinderUserData(

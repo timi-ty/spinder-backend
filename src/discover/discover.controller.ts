@@ -9,7 +9,7 @@ import {
 import { getCountOrAllOwnedSpotifyPlaylists } from "./discover.util.js";
 import { updateFirestoreDoc } from "../firebase/firebase.spinder.js";
 
-//Get the list of currently allowed discover destinations. The user's destination selection should be marked in the response.
+//Get the list of currently allowed discover destinations. The user's destination selection is part of the response.
 async function getDiscoverDestinations(
   req: Request,
   res: Response,
@@ -50,13 +50,6 @@ async function getDiscoverDestinations(
   }
 }
 
-//Search the list of currently allowed discover destinations.
-async function searchDiscoverDestinations(
-  req: Request,
-  res: Response,
-  next: (error: SpinderError) => void
-) {}
-
 async function setDiscoverDestination(
   req: Request,
   res: Response,
@@ -96,12 +89,11 @@ async function getDiscoverSourceTypes(
     const userData = await updateOrCreateSpinderUserData(userId, accessToken);
     var discoverSourceTypesData: DiscoverSourceData = {
       selectedSource: userData.selectedDiscoverSource,
-      availableSources: [
+      availableCompositeSources: [
         "Anything Me",
-        "Following",
-        "Playlist",
-        "Artiste",
-        "Keyword",
+        "Spinder People",
+        "My Artists",
+        "My Playlists",
       ],
     };
     okResponse(req, res, discoverSourceTypesData);
@@ -129,6 +121,5 @@ export {
   getDiscoverSourceTypes,
   searchDiscoverSources,
   getDiscoverDestinations,
-  searchDiscoverDestinations,
   setDiscoverDestination,
 };

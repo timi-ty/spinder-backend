@@ -41,6 +41,12 @@ function okRedirect(req: Request, res: Response, redirectUrl: string) {
   res.status(HttpStatusCode.SeeOther).redirect(redirectUrl);
 }
 
+//Returns count number of random items from a list. If the list size is less than count, the result size is equal to the list size.
+function getRandomItems<T>(list: T[], count: number): T[] {
+  const shuffled = list.slice().sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, Math.min(count, list.length));
+}
+
 export {
   fiveMinutesInMillis,
   oneYearInMillis,
@@ -48,4 +54,5 @@ export {
   SpinderClientError,
   okResponse,
   okRedirect,
+  getRandomItems,
 };

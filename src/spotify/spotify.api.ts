@@ -5,6 +5,8 @@ import {
   SpotifyPlaylists,
   SpotifyTopTracks,
   SpotifyToken,
+  SpotifyRecommendations,
+  Track,
 } from "./spotify.model.js";
 import { spotifyLogger } from "../utils/logger.js";
 
@@ -117,6 +119,9 @@ async function getSpotifyUserPlaylists(
 
   if (response.status === HttpStatusCode.Ok) {
     const spotifyPlaylists: SpotifyPlaylists = await response.json();
+    //We do this because we want to tell the frontend how far we've gone in the search.
+    //The frontend can then call the endpoint again with the last offset it obtained to continue the search.
+    spotifyPlaylists.offset = offset + spotifyPlaylists.items.length;
     return spotifyPlaylists;
   } else {
     const spotifyErrorResponse: SpotifyErrorResponse = await response.json();
@@ -129,7 +134,8 @@ async function getSpotifyUserPlaylists(
 async function getSpotifyUserTopTracks(
   accessToken: string,
   offset: number,
-  next: string = `https://api.spotify.com/v1/me/top/tracks?offset=${offset}&limit=50`
+  limit: number,
+  next: string = `https://api.spotify.com/v1/me/top/tracks?offset=${offset}&limit=${limit}`
 ): Promise<SpotifyTopTracks> {
   spotifyLogger.debug(`Getting user spotify top tracks at url ${next}`);
   const response = await fetch(next, {
@@ -141,6 +147,32 @@ async function getSpotifyUserTopTracks(
   if (response.status === HttpStatusCode.Ok) {
     const spotifyPlaylists: SpotifyTopTracks = await response.json();
     return spotifyPlaylists;
+  } else {
+    const spotifyErrorResponse: SpotifyErrorResponse = await response.json();
+    throw new Error(
+      `Status: ${spotifyErrorResponse.error.status}, Message: ${spotifyErrorResponse.error.message}`
+    );
+  }
+}
+
+async function getSpotifyRecommendations(
+  accessToken: string,
+  seedTracks: Track[],
+  limit: number
+): Promise<SpotifyRecommendations> {
+  spotifyLogger.debug(`Getting user spotify top recommendations.`);
+  const seedTrackIds = seedTracks.map((track) => track.id).join();
+  var url = `https://api.spotify.com/v1/recommendations?limit=${limit}&seed_tracks=${seedTrackIds}`;
+  const response = await fetch(url, {
+    headers: {
+      Authorization: "Bearer " + accessToken,
+    },
+  });
+
+  if (response.status === HttpStatusCode.Ok) {
+    const spotifyReocommendations: SpotifyRecommendations =
+      await response.json();
+    return spotifyReocommendations;
   } else {
     const spotifyErrorResponse: SpotifyErrorResponse = await response.json();
     throw new Error(
@@ -196,6 +228,30 @@ function addTracksToSpotifyUserPlaylist(
     });
 }
 
+// Offset is only used if the next url is not supplied.
+async function searchSpotify(
+  accessToken: string,
+  offset: number,
+  next: string = `https://api.spotify.com/v1/me/playlists?offset=${offset}&limit=50`
+): Promise<SpotifyPlaylists> {
+  spotifyLogger.debug(`Getting user spotify playlists at url ${next}`);
+  const response = await fetch(next, {
+    headers: {
+      Authorization: "Bearer " + accessToken,
+    },
+  });
+
+  if (response.status === HttpStatusCode.Ok) {
+    const spotifyPlaylists: SpotifyPlaylists = await response.json();
+    return spotifyPlaylists;
+  } else {
+    const spotifyErrorResponse: SpotifyErrorResponse = await response.json();
+    throw new Error(
+      `Status: ${spotifyErrorResponse.error.status}, Message: ${spotifyErrorResponse.error.message}`
+    );
+  }
+}
+
 export {
   getSpotifyUserProfile,
   getSpotifyUserPlaylists,
@@ -203,4 +259,5 @@ export {
   addTracksToSpotifyUserPlaylist,
   requestSpotifyAccessToken,
   refreshSpotifyAccessToken,
+  getSpotifyRecommendations,
 };

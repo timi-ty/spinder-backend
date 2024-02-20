@@ -101,7 +101,7 @@ interface SpotifyPlaylists {
   items: PlaylistItem[];
 }
 
-interface TopTrack {
+interface Track {
   album: Album;
   artists: Artist[];
   available_markets: string[];
@@ -159,7 +159,21 @@ interface SpotifyTopTracks {
   offset: number;
   previous: null;
   total: number;
-  items: TopTrack[];
+  items: Track[];
+}
+
+interface Seed {
+  afterFilteringSize: number;
+  afterRelinkingSize: number;
+  href: null | string;
+  id: string;
+  initialPoolSize: number;
+  type: string;
+}
+
+interface SpotifyRecommendations {
+  seeds: Seed[];
+  tracks: Track[];
 }
 
 export {
@@ -168,4 +182,6 @@ export {
   SpotifyPlaylists,
   SpotifyTopTracks,
   SpotifyToken,
+  SpotifyRecommendations,
+  Track,
 };
