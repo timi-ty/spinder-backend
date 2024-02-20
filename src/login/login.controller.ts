@@ -103,6 +103,10 @@ async function finishLoginWithSpotify(
   }
 }
 
+//Most likely finalize login does more work than it needs to.
+//The logic it does should be moved to finish login and it should be an almost empty endpoint.
+//That only uses middleware to verify firebase and spotify authentications.
+//Can be renamed to silent login.
 async function finalizeLogin(
   req: Request,
   res: Response,
