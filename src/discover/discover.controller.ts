@@ -1,13 +1,22 @@
 import { Request, Response } from "express";
 import { SpinderError, okResponse } from "../utils/utils.js";
-import { DiscoverDestination, DiscoverSourceData } from "./discover.model.js";
+import {
+  DiscoverDestination,
+  DiscoverSource,
+  DiscoverSourceData,
+  DiscoverSourceSearchResult,
+} from "./discover.model.js";
 import { HttpStatusCode } from "axios";
 import {
   updateOrCreateSpinderUserData,
   setSpinderUserData,
 } from "../user/user.utils.js";
 import { getCountOrAllOwnedSpotifyPlaylists } from "./discover.util.js";
-import { updateFirestoreDoc } from "../firebase/firebase.spinder.js";
+import {
+  clearFirestoreCollection,
+  updateFirestoreDoc,
+} from "../firebase/firebase.spinder.js";
+import { searchSpotify } from "../spotify/spotify.api.js";
 
 //Get the list of currently allowed discover destinations. The user's destination selection is part of the response.
 async function getDiscoverDestinations(
@@ -70,7 +79,7 @@ async function setDiscoverDestination(
       new SpinderError(
         HttpStatusCode.InternalServerError,
         new Error(
-          "Failed to set desinationId. This is most likely a db write failure."
+          "Failed to set destination. This is most likely a db write failure."
         )
       )
     );
@@ -89,11 +98,31 @@ async function getDiscoverSourceTypes(
     const userData = await updateOrCreateSpinderUserData(userId, accessToken);
     var discoverSourceTypesData: DiscoverSourceData = {
       selectedSource: userData.selectedDiscoverSource,
-      availableCompositeSources: [
-        "Anything Me",
-        "Spinder People",
-        "My Artists",
-        "My Playlists",
+      availableSources: [
+        {
+          type: "Anything Me",
+          id: "Anything Me",
+          name: "Anything Me",
+          image: "",
+        },
+        {
+          type: "Spinder People",
+          id: "Spinder People",
+          name: "Spinder People",
+          image: "",
+        },
+        {
+          type: "My Artists",
+          id: "My Artists",
+          name: "My Artists",
+          image: "",
+        },
+        {
+          type: "My Playlists",
+          id: "My Playlists",
+          name: "My Playlists",
+          image: "",
+        },
       ],
     };
     okResponse(req, res, discoverSourceTypesData);
@@ -110,16 +139,86 @@ async function getDiscoverSourceTypes(
   }
 }
 
-//Using source type, search spotify for matching discover sources.
 async function searchDiscoverSources(
   req: Request,
   res: Response,
   next: (error: SpinderError) => void
-) {}
+) {
+  try {
+    const q = req.query.q || "";
+    const accessToken = req.cookies.spinder_spotify_access_token || "";
+
+    const spotifySearchResult = searchSpotify(accessToken, q as string);
+    const artistSources = (await spotifySearchResult).artists.items.map(
+      (artist) => {
+        const artistSource: DiscoverSource = {
+          type: "Artist",
+          id: artist.id,
+          name: artist.name,
+          image: artist.images.length > 0 ? artist.images[0].url : "",
+        };
+        return artistSource;
+      }
+    );
+    const playlistSources = (await spotifySearchResult).playlists.items.map(
+      (playlist) => {
+        const playlistSource: DiscoverSource = {
+          type: "Playlist",
+          id: playlist.id,
+          name: playlist.name,
+          image: playlist.images[0].url ?? "",
+        };
+        return playlistSource;
+      }
+    );
+    const searchResult: DiscoverSourceSearchResult = {
+      artists: artistSources,
+      playlists: playlistSources,
+    };
+    okResponse(req, res, searchResult);
+  } catch (error) {
+    console.error(error);
+    next(
+      new SpinderError(
+        HttpStatusCode.InternalServerError,
+        new Error("Failed to search.")
+      )
+    );
+  }
+}
+
+async function setDiscoverSource(
+  req: Request,
+  res: Response,
+  next: (error: SpinderError) => void
+) {
+  const source = req.query.source || null;
+  const userId = req.cookies.userId || null;
+  try {
+    if (!source) throw new Error("Invalid source."); //Replace with more sophisticated validation.
+    const data: DiscoverSource = JSON.parse(source as string); //as sring should no longer be needed if destination is properly validated.
+    await updateFirestoreDoc(`users/${userId}`, {
+      selectedDiscoverSource: data,
+    });
+    await clearFirestoreCollection(`users/${userId}/sourceDeck`);
+    await okResponse(req, res, data);
+  } catch (error) {
+    console.error(error);
+    next(
+      new SpinderError(
+        HttpStatusCode.InternalServerError,
+        new Error(
+          "Failed to set source. This is most likely a db write failure."
+        )
+      )
+    );
+  }
+}
 
 export {
   getDiscoverSourceTypes,
   searchDiscoverSources,
+  setDiscoverSource,
   getDiscoverDestinations,
   setDiscoverDestination,
 };

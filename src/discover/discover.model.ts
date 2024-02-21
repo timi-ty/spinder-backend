@@ -30,7 +30,12 @@ const defaultDiscoverSource: DiscoverSource = {
 
 interface DiscoverSourceData {
   selectedSource: DiscoverSource;
-  availableCompositeSources: DiscoverCompositeSource[];
+  availableSources: DiscoverSource[];
+}
+
+interface DiscoverSourceSearchResult {
+  artists: DiscoverSource[];
+  playlists: DiscoverSource[];
 }
 
 //For now, destination has to be a Spotify Playlist.
@@ -57,6 +62,7 @@ export {
   DiscoverSource,
   defaultDiscoverSource,
   DiscoverSourceData,
+  DiscoverSourceSearchResult,
   DiscoverDestination,
   emptyDiscoverDestination,
   DiscoverDestinationData,

@@ -176,6 +176,61 @@ interface SpotifyRecommendations {
   tracks: Track[];
 }
 
+interface Artists {
+  href: string;
+  limit: number;
+  next: string;
+  offset: number;
+  previous: null;
+  total: number;
+  items: ArtistsItem[];
+}
+
+interface ArtistsItem {
+  external_urls: ExternalUrls;
+  followers: Followers;
+  genres: string[];
+  href: string;
+  id: string;
+  images: Image[];
+  name: string;
+  popularity: number;
+  type: "artist";
+  uri: string;
+}
+
+interface Playlists {
+  href: string;
+  limit: number;
+  next: string;
+  offset: number;
+  previous: null;
+  total: number;
+  items: PlaylistsItem[];
+}
+
+interface PlaylistsItem {
+  collaborative: boolean;
+  description: string;
+  external_urls: ExternalUrls;
+  href: string;
+  id: string;
+  images: Image[];
+  name: string;
+  owner: Owner;
+  public: null;
+  snapshot_id: string;
+  tracks: Followers;
+  type: "playlist";
+  uri: string;
+  primary_color: null;
+}
+
+interface SpotifySearchResult {
+  artists: Artists;
+  playlists: Playlists;
+}
+
 export {
   SpotifyErrorResponse,
   SpotifyUserProfileData,
@@ -184,4 +239,5 @@ export {
   SpotifyToken,
   SpotifyRecommendations,
   Track,
+  SpotifySearchResult,
 };

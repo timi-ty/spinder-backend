@@ -151,6 +151,26 @@ async function batchDeleteFirestoreDocs(
   );
 }
 
+async function clearFirestoreCollection(collectionPath: string): Promise<void> {
+  if (!firestore) {
+    throw new Error(
+      "Failed to set collection. firestore object does not exist. Call startFirebaseApp before calling any other functions."
+    );
+  }
+
+  const batch = firestore.batch();
+  const colRef = firestore.collection(collectionPath);
+  const col = await colRef.get();
+  col.forEach((docSnapshot) => {
+    const docRef = docSnapshot.ref;
+    batch.delete(docRef);
+  });
+  const writeResult = await batch.commit();
+  firebaseMarkerLog(
+    `Clear::Batch deleted ${writeResult.length} firestore docs at ${collectionPath}.`
+  );
+}
+
 async function getFirestoreDoc<T>(docPath: string): Promise<T | null> {
   if (!firestore) {
     throw new Error(
@@ -255,6 +275,7 @@ export {
   listenToFirestoreCollection,
   batchSetFirestoreDocs,
   batchDeleteFirestoreDocs,
+  clearFirestoreCollection,
   getFirestoreDoc,
   setFirestoreDoc,
   updateFirestoreDoc,

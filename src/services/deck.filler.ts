@@ -67,8 +67,9 @@ async function getAnythingMeTracks(accessToken: string): Promise<DeckItem[]> {
       previewUrl: track.preview_url,
       trackName: track.name,
       trackUri: track.uri,
-      artistName: track.artists[0].name,
-      artistUri: track.artists[0].uri,
+      artistName:
+        track.artists.length > 0 ? track.artists[0].name : "Unknown Artist",
+      artistUri: track.artists.length > 0 ? track.artists[0].uri : "",
       trackId: track.id,
     };
   });
