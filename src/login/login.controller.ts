@@ -74,10 +74,12 @@ async function finishLoginWithSpotify(
       res.cookie("spinder_spotify_access_token", authToken.accessToken, {
         maxAge: authToken.maxAge,
         httpOnly: true,
+        secure: true,
       });
       res.cookie("spinder_spotify_refresh_token", authToken.refreshToken, {
         maxAge: oneYearInMillis,
         httpOnly: true,
+        secure: true,
       });
       loginLogger.debug(
         `Finished login: Token - ${authToken.accessToken}, Expiry - ${authToken.maxAge}`
