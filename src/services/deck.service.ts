@@ -11,6 +11,7 @@ import { addTracksToSpotifyUserPlaylist } from "../spotify/spotify.api.js";
 import { getSpinderUserData } from "../user/user.utils.js";
 import { deckLogger } from "../utils/logger.js";
 import { getDeckTracks } from "./deck.filler.js";
+import { DeckItem } from "./deck.model.js";
 
 const sourceDeckThresholdSize = 50; // The deck service tries to maintain each user's sourceDeck at this size.
 const sourceDeckMinSize = 20;

@@ -101,7 +101,7 @@ interface SpotifyPlaylists {
   items: PlaylistItem[];
 }
 
-interface Track {
+interface SpotifyTrack {
   album: Album;
   artists: Artist[];
   available_markets: string[];
@@ -159,7 +159,7 @@ interface SpotifyTopTracks {
   offset: number;
   previous: null;
   total: number;
-  items: Track[];
+  items: SpotifyTrack[];
 }
 
 interface Seed {
@@ -173,7 +173,7 @@ interface Seed {
 
 interface SpotifyRecommendations {
   seeds: Seed[];
-  tracks: Track[];
+  tracks: SpotifyTrack[];
 }
 
 interface Artists {
@@ -183,10 +183,10 @@ interface Artists {
   offset: number;
   previous: null;
   total: number;
-  items: ArtistsItem[];
+  items: ArtistDetails[];
 }
 
-interface ArtistsItem {
+interface ArtistDetails {
   external_urls: ExternalUrls;
   followers: Followers;
   genres: string[];
@@ -206,10 +206,10 @@ interface Playlists {
   offset: number;
   previous: null;
   total: number;
-  items: PlaylistsItem[];
+  items: PlaylistDetails[];
 }
 
-interface PlaylistsItem {
+interface PlaylistDetails {
   collaborative: boolean;
   description: string;
   external_urls: ExternalUrls;
@@ -231,6 +231,10 @@ interface SpotifySearchResult {
   playlists: Playlists;
 }
 
+interface SpotifySeveralArtists {
+  artists: ArtistDetails[];
+}
+
 export {
   SpotifyErrorResponse,
   SpotifyUserProfileData,
@@ -238,6 +242,7 @@ export {
   SpotifyTopTracks,
   SpotifyToken,
   SpotifyRecommendations,
-  Track,
+  SpotifyTrack,
   SpotifySearchResult,
+  SpotifySeveralArtists,
 };

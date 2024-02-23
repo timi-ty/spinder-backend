@@ -6,8 +6,9 @@ import {
   SpotifyTopTracks,
   SpotifyToken,
   SpotifyRecommendations,
-  Track,
+  SpotifyTrack,
   SpotifySearchResult,
+  SpotifySeveralArtists,
 } from "./spotify.model.js";
 import { spotifyLogger } from "../utils/logger.js";
 
@@ -158,7 +159,7 @@ async function getSpotifyUserTopTracks(
 
 async function getSpotifyRecommendations(
   accessToken: string,
-  seedTracks: Track[],
+  seedTracks: SpotifyTrack[],
   limit: number
 ): Promise<SpotifyRecommendations> {
   spotifyLogger.debug(`Getting user spotify recommendations.`);
@@ -253,6 +254,33 @@ async function searchSpotify(
   }
 }
 
+async function getSpotifySeveralArtists(
+  accessToken: string,
+  artistsIds: string[]
+): Promise<SpotifySeveralArtists> {
+  spotifyLogger.debug(
+    `Getting ${artistsIds.length} artists details from Spotify.`
+  );
+  const ids = artistsIds.join();
+  const url = `https://api.spotify.com/v1/artists?ids=${ids}`;
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: "Bearer " + accessToken,
+    },
+  });
+
+  if (response.status === HttpStatusCode.Ok) {
+    const spotifySeveralArtists: SpotifySeveralArtists = await response.json();
+    return spotifySeveralArtists;
+  } else {
+    const spotifyErrorResponse: SpotifyErrorResponse = await response.json();
+    throw new Error(
+      `Status: ${spotifyErrorResponse.error.status}, Message: ${spotifyErrorResponse.error.message}`
+    );
+  }
+}
+
 export {
   getSpotifyUserProfile,
   getSpotifyUserPlaylists,
@@ -262,4 +290,5 @@ export {
   refreshSpotifyAccessToken,
   getSpotifyRecommendations,
   searchSpotify,
+  getSpotifySeveralArtists,
 };
