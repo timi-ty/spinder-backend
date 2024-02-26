@@ -47,6 +47,18 @@ function getRandomItems<T>(list: T[], count: number): T[] {
   return shuffled.slice(0, Math.min(count, list.length));
 }
 
+function safeParseJson(jsonString: string) {
+  return JSON.parse(jsonString, (key, value) => {
+    if (typeof value === "string") {
+      return value.replace(/\\u[\dA-Fa-f]{4}/g, (match) => {
+        // Convert Unicode escape sequences to characters
+        return String.fromCharCode(parseInt(match.substr(2), 16));
+      });
+    }
+    return value;
+  });
+}
+
 export {
   fiveMinutesInMillis,
   oneYearInMillis,
@@ -55,4 +67,5 @@ export {
   okResponse,
   okRedirect,
   getRandomItems,
+  safeParseJson,
 };

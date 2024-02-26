@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { SpinderError, okResponse } from "../utils/utils.js";
+import { SpinderError, okResponse, safeParseJson } from "../utils/utils.js";
 import {
   DiscoverDestination,
   DiscoverSource,
@@ -68,7 +68,7 @@ async function setDiscoverDestination(
   const userId = req.cookies.userId || null;
   try {
     if (!destination) throw new Error("Invalid destination."); //Replace with more sophisticated validation.
-    const data: DiscoverDestination = JSON.parse(destination as string); //as sring should no longer be needed if destination is properly validated.
+    const data: DiscoverDestination = safeParseJson(destination as string); //as string should no longer be needed if destination is properly validated.
     await updateFirestoreDoc(`users/${userId}`, {
       selectedDiscoverDestination: data,
     });
@@ -196,7 +196,7 @@ async function setDiscoverSource(
   const userId = req.cookies.userId || null;
   try {
     if (!source) throw new Error("Invalid source."); //Replace with more sophisticated validation.
-    const data: DiscoverSource = JSON.parse(source as string); //as sring should no longer be needed if destination is properly validated.
+    const data: DiscoverSource = safeParseJson(source as string); //as sring should no longer be needed if destination is properly validated.
     await updateFirestoreDoc(`users/${userId}`, {
       selectedDiscoverSource: data,
     });
