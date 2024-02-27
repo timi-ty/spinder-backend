@@ -32,6 +32,7 @@ async function getDeckTracks(
       deckItems = await getSpinderPeopleTracks();
       break;
     case "My Artists":
+      deckItems = await getMyArtistsTracks(accessToken);
       break;
     case "My Playlists":
       break;
