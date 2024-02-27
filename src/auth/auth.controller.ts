@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { RenewedAuthData } from "./auth.model.js";
 import { okResponse } from "../utils/utils.js";
+import { updateOrCreateSpinderUserData } from "../user/user.utils.js";
 
 async function renewAuthentication(req: Request, res: Response) {
   //If no middlewares blocked the request from reaching this point then everything is ok. Respond accordingly.
@@ -10,6 +11,10 @@ async function renewAuthentication(req: Request, res: Response) {
       req.cookies.spinder_spotify_access_token_expiry,
     firebaseIdTokenExpiresIn: req.cookies.firebase_token_expiry,
   };
+
+  const accessToken = req.cookies.spinder_spotify_access_token || null;
+
+  await updateOrCreateSpinderUserData(renewAuthResponse.userId, accessToken);
 
   okResponse(req, res, renewAuthResponse);
 }
