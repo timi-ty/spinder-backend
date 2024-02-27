@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import { Request, Response } from "express";
 import { createFirebaseCustomToken } from "../firebase/firebase.spinder.js";
 import { updateOrCreateSpinderUserData } from "../user/user.utils.js";
-import { FinalizeLoginData } from "./login.model.js";
+import { FinalizeLoginData, SilentLoginData } from "./login.model.js";
 import {
   SpinderServerError,
   fiveMinutesInMillis,
@@ -84,7 +84,7 @@ async function finishLoginWithSpotify(
       loginLogger.debug(
         `Finished login: Token - ${authToken.accessToken}, Expiry - ${authToken.maxAge}`
       );
-      okRedirect(req, res, process.env.FRONTEND_ROOT || "");
+      okRedirect(req, res, process.env.FRONTEND_FINALIZE_LOGIN || ""); //Tell the front-end to call the finalize login endpoint.
     } catch (error) {
       console.error(error);
       next(
@@ -105,10 +105,7 @@ async function finishLoginWithSpotify(
   }
 }
 
-//Most likely finalize login does more work than it needs to.
-//The logic it does should be moved to finish login and it should be an almost empty endpoint.
-//That only uses middleware to verify firebase and spotify authentications.
-//Can be renamed to silent login.
+//This is the last endpoint touched for a fresh authentication and the only endpoint touched for a silent login.
 async function finalizeLogin(
   req: Request,
   res: Response,
@@ -118,6 +115,32 @@ async function finalizeLogin(
   const accessToken = req.cookies.spinder_spotify_access_token || null;
   var userProfile: SpotifyUserProfileData | null = null;
 
+  //If login has been previously finalized, the custom token will still be available and we can login silently (quicker).
+  const customToken = req.cookies.spinder_firebase_custom_token || null;
+
+  //Silent login.
+  if (customToken) {
+    try {
+      const finalizeLoginData: FinalizeLoginData = {
+        firebaseCustomToken: customToken,
+      };
+      loginLogger.debug(
+        `Silently logging in user with custom token: ${customToken}`
+      );
+      okResponse(req, res, finalizeLoginData);
+    } catch (error) {
+      console.error(error);
+      next(
+        new SpinderServerError(
+          HttpStatusCode.InternalServerError,
+          new Error(`Failed to finalize (silent) login with firebase for user.`)
+        )
+      );
+    }
+    return;
+  }
+
+  //Verbose login.
   try {
     userProfile = await getSpotifyUserProfile(accessToken);
   } catch (error) {
@@ -134,12 +157,20 @@ async function finalizeLogin(
   }
 
   try {
-    const customToken: FinalizeLoginData = {
+    const finalizeLoginData: FinalizeLoginData = {
       firebaseCustomToken: await createFirebaseCustomToken(userProfile.id),
-      spotifyAccessToken: accessToken,
     };
-    updateOrCreateSpinderUserData(userProfile.id, accessToken);
-    okResponse(req, res, customToken);
+    await updateOrCreateSpinderUserData(userProfile.id, accessToken);
+    res.cookie(
+      "spinder_firebase_custom_token",
+      finalizeLoginData.firebaseCustomToken,
+      {
+        maxAge: oneYearInMillis,
+        httpOnly: true,
+        secure: true,
+      }
+    );
+    okResponse(req, res, finalizeLoginData);
   } catch (error) {
     console.error(error);
     next(

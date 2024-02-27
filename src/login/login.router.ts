@@ -5,7 +5,10 @@ import {
   startLoginWithSpotify,
 } from "./login.controller.js";
 import { loginErrorHandler, loginRequestLogger } from "./login.middleware.js";
-import { ensureSpotifyAccessToken } from "../auth/auth.middleware.js";
+import {
+  ensureFirebaseAuthenticatedUser,
+  ensureSpotifyAccessToken,
+} from "../auth/auth.middleware.js";
 
 var loginRouter: Router;
 
@@ -22,7 +25,7 @@ function assembleLoginRouter(router: Router) {
 
   //Finalize login requires Spotify access token, this ensures that it is available.
   loginRouter.use(ensureSpotifyAccessToken(false));
-  //The response of this request marks the completion of the login process.
+  //The response of this request marks the completion of the initial login process.
   loginRouter.get("/finalize", finalizeLogin);
 
   //Handle login errors.

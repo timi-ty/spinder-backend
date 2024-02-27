@@ -4,12 +4,10 @@ interface AuthToken {
   refreshToken: string;
 }
 
-interface RenewedAuth {
+interface RenewedAuthData {
   userId: string;
-  spotifyAccessToken: string;
   spotifyAccessTokenExpiresIn: number;
-  firebaseIdToken: string;
   firebaseIdTokenExpiresIn: number;
 }
 
-export { AuthToken, RenewedAuth };
+export { AuthToken, RenewedAuthData };
