@@ -183,10 +183,10 @@ interface Artists {
   offset: number;
   previous: null;
   total: number;
-  items: ArtistDetails[];
+  items: SpotifyArtistDetails[];
 }
 
-interface ArtistDetails {
+interface SpotifyArtistDetails {
   external_urls: ExternalUrls;
   followers: Followers;
   genres: string[];
@@ -232,7 +232,24 @@ interface SpotifySearchResult {
 }
 
 interface SpotifySeveralArtists {
-  artists: ArtistDetails[];
+  artists: SpotifyArtistDetails[];
+}
+
+interface SpotifyFollowedArtists {
+  artists: ArtistsPage;
+}
+
+interface ArtistsPage {
+  href: string;
+  limit: number;
+  next: string;
+  cursors: Cursors;
+  total: number;
+  items: SpotifyArtistDetails[];
+}
+
+interface Cursors {
+  after: string;
 }
 
 export {
@@ -245,4 +262,6 @@ export {
   SpotifyTrack,
   SpotifySearchResult,
   SpotifySeveralArtists,
+  SpotifyFollowedArtists,
+  SpotifyArtistDetails,
 };

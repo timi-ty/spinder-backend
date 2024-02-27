@@ -9,6 +9,8 @@ import {
   SpotifyTrack,
   SpotifySearchResult,
   SpotifySeveralArtists,
+  SpotifyFollowedArtists,
+  SpotifyArtistDetails,
 } from "./spotify.model.js";
 import { spotifyLogger } from "../utils/logger.js";
 
@@ -157,7 +159,7 @@ async function getSpotifyUserTopTracks(
   }
 }
 
-async function getSpotifyRecommendations(
+async function getSpotifyRecommendationsFromTracks(
   accessToken: string,
   seedTracks: SpotifyTrack[],
   limit: number
@@ -165,6 +167,32 @@ async function getSpotifyRecommendations(
   spotifyLogger.debug(`Getting user spotify recommendations.`);
   const seedTrackIds = seedTracks.map((track) => track.id).join();
   var url = `https://api.spotify.com/v1/recommendations?limit=${limit}&seed_tracks=${seedTrackIds}`;
+  const response = await fetch(url, {
+    headers: {
+      Authorization: "Bearer " + accessToken,
+    },
+  });
+
+  if (response.status === HttpStatusCode.Ok) {
+    const spotifyReocommendations: SpotifyRecommendations =
+      await response.json();
+    return spotifyReocommendations;
+  } else {
+    const spotifyErrorResponse: SpotifyErrorResponse = await response.json();
+    throw new Error(
+      `Status: ${spotifyErrorResponse.error.status}, Message: ${spotifyErrorResponse.error.message}`
+    );
+  }
+}
+
+async function getSpotifyRecommendationsFromArtists(
+  accessToken: string,
+  seedArtists: SpotifyArtistDetails[],
+  limit: number
+): Promise<SpotifyRecommendations> {
+  spotifyLogger.debug(`Getting user spotify recommendations.`);
+  const seedTrackIds = seedArtists.map((track) => track.id).join();
+  var url = `https://api.spotify.com/v1/recommendations?limit=${limit}&seed_artists=${seedTrackIds}`;
   const response = await fetch(url, {
     headers: {
       Authorization: "Bearer " + accessToken,
@@ -281,6 +309,31 @@ async function getSpotifySeveralArtists(
   }
 }
 
+async function getSpotifyFollowedArtists(
+  accessToken: string,
+  limit: number
+): Promise<SpotifyFollowedArtists> {
+  spotifyLogger.debug(`Getting artists followed from Spotify.`);
+  const url = `https://api.spotify.com/v1/me/following?type=artist&limit=${limit}`;
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: "Bearer " + accessToken,
+    },
+  });
+
+  if (response.status === HttpStatusCode.Ok) {
+    const spotifyFollowedArtists: SpotifyFollowedArtists =
+      await response.json();
+    return spotifyFollowedArtists;
+  } else {
+    const spotifyErrorResponse: SpotifyErrorResponse = await response.json();
+    throw new Error(
+      `Status: ${spotifyErrorResponse.error.status}, Message: ${spotifyErrorResponse.error.message}`
+    );
+  }
+}
+
 export {
   getSpotifyUserProfile,
   getSpotifyUserPlaylists,
@@ -288,7 +341,9 @@ export {
   addTracksToSpotifyUserPlaylist,
   requestSpotifyAccessToken,
   refreshSpotifyAccessToken,
-  getSpotifyRecommendations,
+  getSpotifyRecommendationsFromTracks,
+  getSpotifyRecommendationsFromArtists,
   searchSpotify,
   getSpotifySeveralArtists,
+  getSpotifyFollowedArtists,
 };
