@@ -16,7 +16,7 @@ import {
 } from "../spotify/spotify.api.js";
 import { SpotifyTrack } from "../spotify/spotify.model.js";
 import { SpinderUserData } from "../user/user.model.js";
-import { isUserOnline } from "../user/user.utils.js";
+import { getSpinderUserData, isUserOnline } from "../user/user.utils.js";
 import { getRandomItems } from "../utils/utils.js";
 import { DeckItem, DeckItemArtist } from "./deck.model.js";
 
@@ -43,10 +43,13 @@ async function getDeckTracks(
     case "Vibe":
       break;
     case "Spinder Person":
+      deckItems = await getSpinderPersonTracks(source.id);
       break;
     case "Artist":
+      deckItems = await getArtistTracks(accessToken, source.id);
       break;
     case "Playlist":
+      deckItems = await getPlaylistTracks(accessToken, source.id);
       break;
   }
 
@@ -78,7 +81,7 @@ async function getAnythingMeTracks(
   //Get 25 more tracks by way of spotify recommendation.
   const recommendationTracks = await getSpotifyRecommendationsFromTracks(
     accessToken,
-    randomTopTracks,
+    randomTopTracks.map((track) => track.id),
     halfCount
   );
   //Shuffling is pointless here because firestore by default orders data by id. If we want shuffling, it has to be implemented there.
@@ -171,15 +174,14 @@ async function getMyArtistsTracks(
   accessToken: string,
   count: number = 50
 ): Promise<DeckItem[]> {
-  const halfCount = count / 2;
   const followedArtists = await getSpotifyFollowedArtists(accessToken, 50);
   //Select up to 5 random artists from the followed artists to use as recommendation seeds.
   const randomArtists = getRandomItems(followedArtists.artists.items, 5);
-  //Get 25 more tracks by way of spotify recommendation.
+  //Get 50 tracks by way of spotify recommendation.
   const recommendationTracks = await getSpotifyRecommendationsFromArtists(
     accessToken,
-    randomArtists,
-    halfCount
+    randomArtists.map((artist) => artist.id),
+    count
   );
   //Shuffling is pointless here because firestore by default orders data by id. If we want shuffling, it has to be implemented there.
   const followedArtistsTracks = recommendationTracks.tracks;
@@ -334,6 +336,166 @@ async function getMyPlaylistsTracks(
     }
   );
   return myPlaylistsDeckTracks;
+}
+
+async function getSpinderPersonTracks(spinderPersonId: string) {
+  const spinderPerson = await getSpinderUserData(spinderPersonId);
+
+  const isOnline = await isUserOnline(spinderPersonId);
+  var accessToken = spinderPerson.accessToken; //An online user will always have a valid spotify access token.
+  if (!isOnline) {
+    accessToken = (await refreshSpotifyAccessToken(spinderPerson.refreshToken))
+      .access_token; //We can refresh tokens for offline users without worry because they will refresh again when they come back online.
+  }
+  const userTopTracks = await getAnythingMeTracks(accessToken, 50);
+
+  return userTopTracks;
+}
+
+async function getArtistTracks(
+  accessToken: string,
+  artistId: string,
+  count: number = 50
+): Promise<DeckItem[]> {
+  //Get 50 tracks by way of spotify recommendation.
+  const recommendationTracks = await getSpotifyRecommendationsFromArtists(
+    accessToken,
+    [artistId],
+    count
+  );
+  //Shuffling is pointless here because firestore by default orders data by id. If we want shuffling, it has to be implemented there.
+  const artistTracks = recommendationTracks.tracks;
+  const artistIds = artistTracks.map((track) =>
+    track.artists.length > 0 ? track.artists[0].id : "0TnOYISbd1XYRBk9myaseg"
+  );
+  const artistsDetails = (
+    await getSpotifySeveralArtists(accessToken, artistIds)
+  ).artists;
+
+  const artistDeckTracks: DeckItem[] = artistTracks.map((track, index) => {
+    const relatedSources: DiscoverSource[] = [];
+    track.artists.forEach((artist) => {
+      const artistSource: DiscoverSource = {
+        type: "Artist",
+        id: artist.id,
+        name: artist.name,
+        image:
+          artistsDetails[index].images.length > 0
+            ? artistsDetails[index].images[0].url
+            : "",
+      };
+      relatedSources.push(artistSource);
+    });
+
+    artistsDetails[index].genres.forEach((genre) => {
+      const vibeSource: DiscoverSource = {
+        type: "Vibe",
+        id: genre,
+        name: genre,
+        image:
+          artistsDetails[index].images.length > 0
+            ? artistsDetails[index].images[0].url
+            : "",
+      };
+      relatedSources.push(vibeSource);
+    });
+
+    const artists = track.artists.map((artist) => {
+      const deckArtist: DeckItemArtist = {
+        artistName: artist.name,
+        artistUri: artist.uri,
+        artistImage:
+          artistsDetails[index].images.length > 0
+            ? artistsDetails[index].images[0].url
+            : "",
+      };
+      return deckArtist;
+    });
+
+    return {
+      trackId: track.id,
+      image: track.album.images.length > 0 ? track.album.images[0].url : "",
+      previewUrl: track.preview_url,
+      trackName: track.name,
+      trackUri: track.uri,
+      artists: artists,
+      relatedSources: relatedSources,
+    };
+  });
+  return artistDeckTracks;
+}
+
+async function getPlaylistTracks(
+  accessToken: string,
+  playlistId: string,
+  count: number = 50
+): Promise<DeckItem[]> {
+  const playlistTrackItems = await getSpotifyUserPlaylistTracks(
+    accessToken,
+    playlistId,
+    0,
+    count
+  ); //TODO: Get a random set of count tracks from the playlist instead of just the first count.
+  const playlistTracks = playlistTrackItems.items.map((item) => item.track);
+
+  const artistIds = playlistTracks.map((track) =>
+    track.artists.length > 0 ? track.artists[0].id : "0TnOYISbd1XYRBk9myaseg"
+  );
+  const artistsDetails = (
+    await getSpotifySeveralArtists(accessToken, artistIds)
+  ).artists;
+
+  const playlistDeckTracks: DeckItem[] = playlistTracks.map((track, index) => {
+    const relatedSources: DiscoverSource[] = [];
+    track.artists.forEach((artist) => {
+      const artistSource: DiscoverSource = {
+        type: "Artist",
+        id: artist.id,
+        name: artist.name,
+        image:
+          artistsDetails[index].images.length > 0
+            ? artistsDetails[index].images[0].url
+            : "",
+      };
+      relatedSources.push(artistSource);
+    });
+
+    artistsDetails[index].genres.forEach((genre) => {
+      const vibeSource: DiscoverSource = {
+        type: "Vibe",
+        id: genre,
+        name: genre,
+        image:
+          artistsDetails[index].images.length > 0
+            ? artistsDetails[index].images[0].url
+            : "",
+      };
+      relatedSources.push(vibeSource);
+    });
+
+    const artists = track.artists.map((artist) => {
+      const deckArtist: DeckItemArtist = {
+        artistName: artist.name,
+        artistUri: artist.uri,
+        artistImage:
+          artistsDetails[index].images.length > 0
+            ? artistsDetails[index].images[0].url
+            : "",
+      };
+      return deckArtist;
+    });
+
+    return {
+      trackId: track.id,
+      image: track.album.images.length > 0 ? track.album.images[0].url : "",
+      previewUrl: track.preview_url,
+      trackName: track.name,
+      trackUri: track.uri,
+      artists: artists,
+      relatedSources: relatedSources,
+    };
+  });
+  return playlistDeckTracks;
 }
 
 export { getDeckTracks };

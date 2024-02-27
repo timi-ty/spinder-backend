@@ -193,11 +193,11 @@ async function getSpotifyUserTopTracks(
 
 async function getSpotifyRecommendationsFromTracks(
   accessToken: string,
-  seedTracks: SpotifyTrack[],
+  seedTracks: string[],
   limit: number
 ): Promise<SpotifyRecommendations> {
   spotifyLogger.debug(`Getting user spotify recommendations.`);
-  const seedTrackIds = seedTracks.map((track) => track.id).join();
+  const seedTrackIds = seedTracks.join();
   var url = `https://api.spotify.com/v1/recommendations?limit=${limit}&seed_tracks=${seedTrackIds}`;
   const response = await fetch(url, {
     headers: {
@@ -219,11 +219,11 @@ async function getSpotifyRecommendationsFromTracks(
 
 async function getSpotifyRecommendationsFromArtists(
   accessToken: string,
-  seedArtists: SpotifyArtistDetails[],
+  seedArtists: string[],
   limit: number
 ): Promise<SpotifyRecommendations> {
   spotifyLogger.debug(`Getting user spotify recommendations.`);
-  const seedTrackIds = seedArtists.map((track) => track.id).join();
+  const seedTrackIds = seedArtists.join();
   var url = `https://api.spotify.com/v1/recommendations?limit=${limit}&seed_artists=${seedTrackIds}`;
   const response = await fetch(url, {
     headers: {
