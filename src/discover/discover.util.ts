@@ -27,6 +27,7 @@ async function getCountOrAllOwnedSpotifyPlaylists(
     spotifyPlaylists = await getSpotifyUserPlaylists(
       accessToken,
       -1,
+      50,
       spotifyPlaylists.next
     );
     const moreOwnedSpotifyPlaylists = filterOwnedSpotifyPlaylists(

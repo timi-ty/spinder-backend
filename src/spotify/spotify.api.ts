@@ -11,6 +11,7 @@ import {
   SpotifySeveralArtists,
   SpotifyFollowedArtists,
   SpotifyArtistDetails,
+  SpotifyPlaylistTracks,
 } from "./spotify.model.js";
 import { spotifyLogger } from "../utils/logger.js";
 
@@ -108,11 +109,12 @@ async function getSpotifyUserProfile(
   }
 }
 
-// Offset is only used if the next url is not supplied.
+// Offset and limit are only used if the next url is not supplied.
 async function getSpotifyUserPlaylists(
   accessToken: string,
   offset: number,
-  next: string = `https://api.spotify.com/v1/me/playlists?offset=${offset}&limit=50`
+  limit: number = 50,
+  next: string = `https://api.spotify.com/v1/me/playlists?offset=${offset}&limit=${limit}`
 ): Promise<SpotifyPlaylists> {
   spotifyLogger.debug(`Getting user spotify playlists at url ${next}`);
   const response = await fetch(next, {
@@ -127,6 +129,36 @@ async function getSpotifyUserPlaylists(
     //The frontend can then call the endpoint again with the last offset it obtained to continue the search.
     spotifyPlaylists.offset = offset + spotifyPlaylists.items.length;
     return spotifyPlaylists;
+  } else {
+    const spotifyErrorResponse: SpotifyErrorResponse = await response.json();
+    throw new Error(
+      `Status: ${spotifyErrorResponse.error.status}, Message: ${spotifyErrorResponse.error.message}`
+    );
+  }
+}
+
+// Offset and limit are only used if the next url is not supplied.
+async function getSpotifyUserPlaylistTracks(
+  accessToken: string,
+  playlistId: string,
+  offset: number,
+  limit: number = 50,
+  next: string = `
+  https://api.spotify.com/v1/playlists/${playlistId}/tracks?offset=${offset}&limit=${limit}&fields=limit,next,offset,total,items(track)`
+): Promise<SpotifyPlaylistTracks> {
+  spotifyLogger.debug(`Getting user spotify playlist tracks at url ${next}`);
+  const response = await fetch(next, {
+    headers: {
+      Authorization: "Bearer " + accessToken,
+    },
+  });
+
+  if (response.status === HttpStatusCode.Ok) {
+    const spotifyPlaylistTracks: SpotifyPlaylistTracks = await response.json();
+    //We do this because we want to tell the frontend how far we've gone in the search.
+    //The frontend can then call the endpoint again with the last offset it obtained to continue the search.
+    spotifyPlaylistTracks.offset = offset + spotifyPlaylistTracks.items.length;
+    return spotifyPlaylistTracks;
   } else {
     const spotifyErrorResponse: SpotifyErrorResponse = await response.json();
     throw new Error(
@@ -346,4 +378,5 @@ export {
   searchSpotify,
   getSpotifySeveralArtists,
   getSpotifyFollowedArtists,
+  getSpotifyUserPlaylistTracks,
 };

@@ -50,22 +50,6 @@ interface SpotifyUserProfileData {
   uri: string;
 }
 
-interface PlaylistItem {
-  collaborative: boolean;
-  description: string;
-  external_urls: ExternalUrls;
-  href: string;
-  id: string;
-  images: Image[];
-  name: string;
-  owner: Owner;
-  public: boolean;
-  snapshot_id: string;
-  tracks: Tracks;
-  type: string;
-  uri: string;
-}
-
 interface ExternalUrls {
   spotify: string;
 }
@@ -146,6 +130,19 @@ interface Artist {
   uri: string;
 }
 
+interface SpotifyArtistDetails {
+  external_urls: ExternalUrls;
+  followers: Followers;
+  genres: string[];
+  href: string;
+  id: string;
+  images: Image[];
+  name: string;
+  popularity: number;
+  type: "artist";
+  uri: string;
+}
+
 interface ExternalIDS {
   isrc: string;
   ean: string;
@@ -186,30 +183,7 @@ interface Artists {
   items: SpotifyArtistDetails[];
 }
 
-interface SpotifyArtistDetails {
-  external_urls: ExternalUrls;
-  followers: Followers;
-  genres: string[];
-  href: string;
-  id: string;
-  images: Image[];
-  name: string;
-  popularity: number;
-  type: "artist";
-  uri: string;
-}
-
-interface Playlists {
-  href: string;
-  limit: number;
-  next: string;
-  offset: number;
-  previous: null;
-  total: number;
-  items: PlaylistDetails[];
-}
-
-interface PlaylistDetails {
+interface PlaylistItem {
   collaborative: boolean;
   description: string;
   external_urls: ExternalUrls;
@@ -218,17 +192,16 @@ interface PlaylistDetails {
   images: Image[];
   name: string;
   owner: Owner;
-  public: null;
+  public: boolean;
   snapshot_id: string;
-  tracks: Followers;
-  type: "playlist";
+  tracks: Tracks;
+  type: string;
   uri: string;
-  primary_color: null;
 }
 
 interface SpotifySearchResult {
   artists: Artists;
-  playlists: Playlists;
+  playlists: SpotifyPlaylists;
 }
 
 interface SpotifySeveralArtists {
@@ -252,6 +225,20 @@ interface Cursors {
   after: string;
 }
 
+interface SpotifyPlaylistTracks {
+  href: string;
+  limit: number;
+  next: string;
+  offset: number;
+  previous: string;
+  total: number;
+  items: PlaylistTrackItem[];
+}
+
+interface PlaylistTrackItem {
+  track: SpotifyTrack;
+}
+
 export {
   SpotifyErrorResponse,
   SpotifyUserProfileData,
@@ -264,4 +251,5 @@ export {
   SpotifySeveralArtists,
   SpotifyFollowedArtists,
   SpotifyArtistDetails,
+  SpotifyPlaylistTracks,
 };

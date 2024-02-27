@@ -9,9 +9,12 @@ import {
   getSpotifyRecommendationsFromArtists,
   getSpotifyRecommendationsFromTracks,
   getSpotifySeveralArtists,
+  getSpotifyUserPlaylistTracks,
+  getSpotifyUserPlaylists,
   getSpotifyUserTopTracks,
   refreshSpotifyAccessToken,
 } from "../spotify/spotify.api.js";
+import { SpotifyTrack } from "../spotify/spotify.model.js";
 import { SpinderUserData } from "../user/user.model.js";
 import { isUserOnline } from "../user/user.utils.js";
 import { getRandomItems } from "../utils/utils.js";
@@ -35,6 +38,7 @@ async function getDeckTracks(
       deckItems = await getMyArtistsTracks(accessToken);
       break;
     case "My Playlists":
+      deckItems = await getMyPlaylistsTracks(accessToken);
       break;
     case "Vibe":
       break;
@@ -59,7 +63,7 @@ async function getAnythingMeTracks(
   count: number = 50
 ): Promise<DeckItem[]> {
   const halfCount = count / 2;
-  //Get just 1 top track only to obtain the total number of available top tracks.
+  //Get just 1 top track to obtain the total number of available top tracks.
   const oneTrack = await getSpotifyUserTopTracks(accessToken, 0, 1);
   //Calculate the maximum possible offset. We cannot offset more than the total minus the number of tracks we want.
   const maxOffset = Math.max(oneTrack.total - halfCount, 0);
@@ -239,6 +243,97 @@ async function getMyArtistsTracks(
     }
   );
   return followedArtistsDeckTracks;
+}
+
+async function getMyPlaylistsTracks(
+  accessToken: string,
+  count: number = 10
+): Promise<DeckItem[]> {
+  //Get just 1 playlist to obtain the total number of available playlists.
+  const onePlaylist = await getSpotifyUserPlaylists(accessToken, 0, 1);
+  //Calculate the maximum possible offset. We cannot offset more than the total minus the number of tracks we want.
+  const maxOffset = Math.max(onePlaylist.total - count, 0);
+  //Compute a random offset between 0 (inclusive) and the maxOffset (inclusive).
+  const offset = Math.round(Math.random() * maxOffset);
+  //Compute limit. We want to get 10 playlists, but we may not have up to that.
+  const limit = Math.min(onePlaylist.total - offset, count);
+  //Get the user's playlists between with offset and limit.
+  const playlists = await getSpotifyUserPlaylists(accessToken, offset, limit);
+  //Select up to 5 random playlists from our playlists to get tracks from.
+  const randomPlaylists = getRandomItems(playlists.items, 5);
+  const myPlaylistsracks: SpotifyTrack[] = [];
+
+  for (var i = 0; i < randomPlaylists.length; i++) {
+    const playlist = randomPlaylists[i];
+    const playlistTracks = await getSpotifyUserPlaylistTracks(
+      accessToken,
+      playlist.id,
+      0,
+      10
+    ); //TODO: Get a random set of 10 tracks from the playlist instead of just the first 10.
+    myPlaylistsracks.push(...playlistTracks.items.map((item) => item.track));
+  }
+
+  const artistIds = myPlaylistsracks.map((track) =>
+    track.artists.length > 0 ? track.artists[0].id : "0TnOYISbd1XYRBk9myaseg"
+  );
+  const artistsDetails = (
+    await getSpotifySeveralArtists(accessToken, artistIds)
+  ).artists;
+
+  const myPlaylistsDeckTracks: DeckItem[] = myPlaylistsracks.map(
+    (track, index) => {
+      const relatedSources: DiscoverSource[] = [];
+      track.artists.forEach((artist) => {
+        const artistSource: DiscoverSource = {
+          type: "Artist",
+          id: artist.id,
+          name: artist.name,
+          image:
+            artistsDetails[index].images.length > 0
+              ? artistsDetails[index].images[0].url
+              : "",
+        };
+        relatedSources.push(artistSource);
+      });
+
+      artistsDetails[index].genres.forEach((genre) => {
+        const vibeSource: DiscoverSource = {
+          type: "Vibe",
+          id: genre,
+          name: genre,
+          image:
+            artistsDetails[index].images.length > 0
+              ? artistsDetails[index].images[0].url
+              : "",
+        };
+        relatedSources.push(vibeSource);
+      });
+
+      const artists = track.artists.map((artist) => {
+        const deckArtist: DeckItemArtist = {
+          artistName: artist.name,
+          artistUri: artist.uri,
+          artistImage:
+            artistsDetails[index].images.length > 0
+              ? artistsDetails[index].images[0].url
+              : "",
+        };
+        return deckArtist;
+      });
+
+      return {
+        trackId: track.id,
+        image: track.album.images.length > 0 ? track.album.images[0].url : "",
+        previewUrl: track.preview_url,
+        trackName: track.name,
+        trackUri: track.uri,
+        artists: artists,
+        relatedSources: relatedSources,
+      };
+    }
+  );
+  return myPlaylistsDeckTracks;
 }
 
 export { getDeckTracks };

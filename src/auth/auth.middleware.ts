@@ -85,8 +85,7 @@ async function ensureFirebaseAuthenticatedUser(
       const decodedToken = await verifyAndDecodeFirebaseIdToken(idToken);
       req.cookies.userId = decodedToken.uid;
       req.cookies.firebase_token = idToken;
-      req.cookies.firebase_token_expiry =
-        decodedToken.exp * 1000 - new Date().getTime(); // Convert to remaining millis
+      req.cookies.firebase_token_expiry = decodedToken.exp * 1000 - Date.now(); // Convert to remaining millis
       authLogger.debug(
         `Ensured that the user with id: ${req.cookies.userId} is authorized.`
       );
