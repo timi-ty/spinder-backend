@@ -1,6 +1,10 @@
 import { Request, Response } from "express";
 import { HttpStatusCode } from "axios";
-import { oneYearInMillis, SpinderError } from "../utils/utils.js";
+import {
+  oneYearInMillis,
+  SpinderClientError,
+  SpinderServerError,
+} from "../utils/utils.js";
 import { verifyAndDecodeFirebaseIdToken } from "../firebase/firebase.spinder.js";
 import { authLogger } from "../utils/logger.js";
 import { refreshSpotifyAccessToken } from "../spotify/spotify.api.js";
@@ -41,7 +45,7 @@ function ensureSpotifyAccessToken(
       } catch (error) {
         console.error(error);
         next(
-          new SpinderError(
+          new SpinderServerError(
             HttpStatusCode.Unauthorized,
             new Error(
               `Failed to refresh spotify access token. Refresh token: ${refreshToken}`
@@ -51,7 +55,7 @@ function ensureSpotifyAccessToken(
       }
     } else {
       next(
-        new SpinderError(
+        new SpinderServerError(
           HttpStatusCode.Unauthorized,
           new Error(
             `Failed to refresh spotify access token. Refresh token: ${refreshToken}`
@@ -90,7 +94,7 @@ async function ensureFirebaseAuthenticatedUser(
     } catch (error) {
       console.error(error);
       next(
-        new SpinderError(
+        new SpinderServerError(
           HttpStatusCode.Unauthorized,
           new Error(
             `Failed to exchange firebase id token for user id. Id token: ${idToken}`
@@ -100,7 +104,7 @@ async function ensureFirebaseAuthenticatedUser(
     }
   } else {
     next(
-      new SpinderError(
+      new SpinderServerError(
         HttpStatusCode.Unauthorized,
         new Error(
           `Failed to exchange firebase id token for user id. Id token: ${idToken}`
@@ -116,7 +120,7 @@ function authRequestLogger(req: Request, res: Response, next: () => void) {
 }
 
 function authErrorHandler(
-  err: SpinderError,
+  err: SpinderServerError,
   req: Request,
   res: Response,
   next: any
@@ -125,7 +129,7 @@ function authErrorHandler(
     `Origin Url: ${req.originalUrl}, Message: ${err.error.message}`
   );
   authLogger.error(err.error.stack);
-  res.status(err.status).json(err);
+  res.status(err.status).json(new SpinderClientError(err));
 }
 
 export {

@@ -1,5 +1,9 @@
 import { Request, Response } from "express";
-import { SpinderError, okResponse, safeParseJson } from "../utils/utils.js";
+import {
+  SpinderServerError,
+  okResponse,
+  safeParseJson,
+} from "../utils/utils.js";
 import {
   DiscoverDestination,
   DiscoverSource,
@@ -22,7 +26,7 @@ import { searchSpotify } from "../spotify/spotify.api.js";
 async function getDiscoverDestinations(
   req: Request,
   res: Response,
-  next: (error: SpinderError) => void
+  next: (error: SpinderServerError) => void
 ) {
   try {
     const accessToken = req.cookies.spinder_spotify_access_token || null;
@@ -49,7 +53,7 @@ async function getDiscoverDestinations(
   } catch (error) {
     console.error(error);
     next(
-      new SpinderError(
+      new SpinderServerError(
         HttpStatusCode.InternalServerError,
         new Error(
           "Failed to assemble reponse. This is most likely a spotify query failure."
@@ -62,7 +66,7 @@ async function getDiscoverDestinations(
 async function setDiscoverDestination(
   req: Request,
   res: Response,
-  next: (error: SpinderError) => void
+  next: (error: SpinderServerError) => void
 ) {
   const destination = req.query.destination || null;
   const userId = req.cookies.userId || null;
@@ -76,7 +80,7 @@ async function setDiscoverDestination(
   } catch (error) {
     console.error(error);
     next(
-      new SpinderError(
+      new SpinderServerError(
         HttpStatusCode.InternalServerError,
         new Error(
           "Failed to set destination. This is most likely a db write failure."
@@ -90,7 +94,7 @@ async function setDiscoverDestination(
 async function getDiscoverSourceTypes(
   req: Request,
   res: Response,
-  next: (error: SpinderError) => void
+  next: (error: SpinderServerError) => void
 ) {
   try {
     const accessToken = req.cookies.spinder_spotify_access_token || null;
@@ -129,7 +133,7 @@ async function getDiscoverSourceTypes(
   } catch (error) {
     console.error(error);
     next(
-      new SpinderError(
+      new SpinderServerError(
         HttpStatusCode.InternalServerError,
         new Error(
           "Failed to assemble reponse. This is most likely a db query failure."
@@ -142,7 +146,7 @@ async function getDiscoverSourceTypes(
 async function searchDiscoverSources(
   req: Request,
   res: Response,
-  next: (error: SpinderError) => void
+  next: (error: SpinderServerError) => void
 ) {
   try {
     const q = req.query.q || "";
@@ -179,7 +183,7 @@ async function searchDiscoverSources(
   } catch (error) {
     console.error(error);
     next(
-      new SpinderError(
+      new SpinderServerError(
         HttpStatusCode.InternalServerError,
         new Error("Failed to search.")
       )
@@ -190,7 +194,7 @@ async function searchDiscoverSources(
 async function setDiscoverSource(
   req: Request,
   res: Response,
-  next: (error: SpinderError) => void
+  next: (error: SpinderServerError) => void
 ) {
   const source = req.query.source || null;
   const userId = req.cookies.userId || null;
@@ -205,7 +209,7 @@ async function setDiscoverSource(
   } catch (error) {
     console.error(error);
     next(
-      new SpinderError(
+      new SpinderServerError(
         HttpStatusCode.InternalServerError,
         new Error(
           "Failed to set source. This is most likely a db write failure."

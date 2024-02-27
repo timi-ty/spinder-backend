@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { HttpStatusCode } from "axios";
-import { SpinderClientError, SpinderError } from "./utils/utils.js";
+import { SpinderClientError, SpinderServerError } from "./utils/utils.js";
 import { appLogger } from "./utils/logger.js";
 
 //TODO: FInd a better way to identify AJAX requests rather than faking the xhr header.
@@ -14,7 +14,7 @@ function interceptRequestMismatch(req: Request, res: Response, next: any) {
   if (req.xhr && isBrowserUrl) {
     // AJAX request made to a browser only url.
     next(
-      new SpinderError(
+      new SpinderServerError(
         HttpStatusCode.BadRequest,
         new Error(
           `Request mismatch. Sent an AJAX request to ${req.originalUrl} but it is a browser only url.`
@@ -24,7 +24,7 @@ function interceptRequestMismatch(req: Request, res: Response, next: any) {
   } else if (!req.xhr && !isBrowserUrl) {
     // Request made by entering URL in the browser to an AJAX only API endpoint.
     next(
-      new SpinderError(
+      new SpinderServerError(
         HttpStatusCode.BadRequest,
         new Error(
           `Request mismatch. Entered ${req.originalUrl} in the browser but it is an AJAX only endpoint.`
@@ -46,9 +46,11 @@ function catchUndefined(req: Request, res: Response) {
     res
       .status(HttpStatusCode.NotFound)
       .json(
-        new SpinderError(
-          HttpStatusCode.NotFound,
-          new Error(`${req.originalUrl} is not an api endpoint.`)
+        new SpinderClientError(
+          new SpinderServerError(
+            HttpStatusCode.NotFound,
+            new Error(`${req.originalUrl} is not an api endpoint.`)
+          )
         )
       );
   } else {
@@ -62,7 +64,12 @@ function catchUndefined(req: Request, res: Response) {
   }
 }
 
-function catchError(err: SpinderError, req: Request, res: Response, next: any) {
+function catchError(
+  err: SpinderServerError,
+  req: Request,
+  res: Response,
+  next: any
+) {
   appLogger.error(
     `Origin Url: ${req.originalUrl}, Message: ${err.error.message}`
   );

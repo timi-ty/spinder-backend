@@ -7,7 +7,7 @@ import { createFirebaseCustomToken } from "../firebase/firebase.spinder.js";
 import { updateOrCreateSpinderUserData } from "../user/user.utils.js";
 import { FinalizeLoginData } from "./login.model.js";
 import {
-  SpinderError,
+  SpinderServerError,
   fiveMinutesInMillis,
   okRedirect,
   okResponse,
@@ -59,7 +59,7 @@ function startLoginWithSpotify(req: Request, res: Response) {
 async function finishLoginWithSpotify(
   req: Request,
   res: Response,
-  next: (error: SpinderError) => void
+  next: (error: SpinderServerError) => void
 ) {
   const code = req.query.code || null;
   const state = req.query.state || null;
@@ -88,7 +88,7 @@ async function finishLoginWithSpotify(
     } catch (error) {
       console.error(error);
       next(
-        new SpinderError(
+        new SpinderServerError(
           HttpStatusCode.InternalServerError,
           new Error("Failed to get spotify access token.")
         )
@@ -101,7 +101,7 @@ async function finishLoginWithSpotify(
     const status = req.query.error
       ? HttpStatusCode.BadRequest
       : HttpStatusCode.InternalServerError;
-    next(new SpinderError(status, new Error(errorMessage)));
+    next(new SpinderServerError(status, new Error(errorMessage)));
   }
 }
 
@@ -112,7 +112,7 @@ async function finishLoginWithSpotify(
 async function finalizeLogin(
   req: Request,
   res: Response,
-  next: (error: SpinderError) => void
+  next: (error: SpinderServerError) => void
 ) {
   //This cookie is set when finishing Spotify login.
   const accessToken = req.cookies.spinder_spotify_access_token || null;
@@ -123,7 +123,7 @@ async function finalizeLogin(
   } catch (error) {
     console.error(error);
     next(
-      new SpinderError(
+      new SpinderServerError(
         HttpStatusCode.InternalServerError,
         new Error(
           `Failed to get user's Spotify profile data with, Access token: ${accessToken}.`
@@ -143,7 +143,7 @@ async function finalizeLogin(
   } catch (error) {
     console.error(error);
     next(
-      new SpinderError(
+      new SpinderServerError(
         HttpStatusCode.InternalServerError,
         new Error(
           `Failed to finalize login with firebase for user with, Id: ${userProfile.id}.`

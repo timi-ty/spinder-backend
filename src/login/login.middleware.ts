@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { SpinderClientError, SpinderError } from "../utils/utils.js";
+import { SpinderClientError, SpinderServerError } from "../utils/utils.js";
 import { loginLogger } from "../utils/logger.js";
 
 function loginRequestLogger(req: Request, res: Response, next: () => void) {
@@ -8,7 +8,7 @@ function loginRequestLogger(req: Request, res: Response, next: () => void) {
 }
 
 function loginErrorHandler(
-  err: SpinderError,
+  err: SpinderServerError,
   req: Request,
   res: Response,
   next: any

@@ -5,7 +5,7 @@ import { appLogger } from "./logger.js";
 const fiveMinutesInMillis = 300000; //5 minutes in millis
 const oneYearInMillis = 31536000000; //1 year in millis
 
-class SpinderError {
+class SpinderServerError {
   status: number;
   error: Error;
 
@@ -19,7 +19,7 @@ class SpinderClientError {
   status: number;
   message: string;
 
-  constructor(error: SpinderError) {
+  constructor(error: SpinderServerError) {
     this.status = error.status;
     this.message = error.error.message;
   }
@@ -62,7 +62,7 @@ function safeParseJson(jsonString: string) {
 export {
   fiveMinutesInMillis,
   oneYearInMillis,
-  SpinderError,
+  SpinderServerError,
   SpinderClientError,
   okResponse,
   okRedirect,

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { SpinderClientError, SpinderError } from "../utils/utils.js";
+import { SpinderClientError, SpinderServerError } from "../utils/utils.js";
 import { discoverLogger } from "../utils/logger.js";
 
 function discoverRequestLogger(req: Request, res: Response, next: () => void) {
@@ -10,7 +10,7 @@ function discoverRequestLogger(req: Request, res: Response, next: () => void) {
 }
 
 function discoverErrorHandler(
-  err: SpinderError,
+  err: SpinderServerError,
   req: Request,
   res: Response,
   next: any
