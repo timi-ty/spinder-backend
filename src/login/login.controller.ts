@@ -33,7 +33,7 @@ function startLoginWithSpotify(req: Request, res: Response) {
   const uniqueId = uuidv4();
   spotifyLoginStates.set(uniqueId, state); //Associate every login request with a unique id.
 
-  const loginId = req.cookies.loginId || null;
+  const loginId: string = req.cookies.loginId || null;
 
   if (loginId) spotifyLoginStates.delete(loginId);
 
@@ -63,9 +63,12 @@ async function finishLoginWithSpotify(
 ) {
   const code = req.query.code || null;
   const state = req.query.state || null;
-  const loginId = req.cookies.loginId || null;
-  const confirmState = loginId ? spotifyLoginStates.get(loginId) : null;
-  const acceptRequest = code && state && confirmState && state === confirmState;
+  const loginId: string = req.cookies.loginId || null;
+  const confirmState: string | null = loginId
+    ? spotifyLoginStates.get(loginId) || null
+    : null;
+  const acceptRequest: boolean =
+    (code && state && confirmState && state === confirmState) || false;
 
   if (acceptRequest) {
     try {
@@ -112,11 +115,11 @@ async function finalizeLogin(
   next: (error: SpinderServerError) => void
 ) {
   //This cookie is set when finishing Spotify login.
-  const accessToken = req.cookies.spinder_spotify_access_token || null;
+  const accessToken: string = req.cookies.spinder_spotify_access_token || null;
   var userProfile: SpotifyUserProfileData | null = null;
 
   //If login has been previously finalized, the custom token will still be available and we can login silently (quicker).
-  const customToken = req.cookies.spinder_firebase_custom_token || null;
+  const customToken: string = req.cookies.spinder_firebase_custom_token || null;
 
   //Silent login.
   if (customToken) {
@@ -160,7 +163,12 @@ async function finalizeLogin(
     const finalizeLoginData: FinalizeLoginData = {
       firebaseCustomToken: await createFirebaseCustomToken(userProfile.id),
     };
-    await updateOrCreateSpinderUserData(userProfile.id, accessToken);
+    const refreshToken = req.cookies.spinder_spotify_refresh_token || null;
+    await updateOrCreateSpinderUserData(
+      userProfile.id,
+      accessToken,
+      refreshToken
+    );
     res.cookie(
       "spinder_firebase_custom_token",
       finalizeLoginData.firebaseCustomToken,

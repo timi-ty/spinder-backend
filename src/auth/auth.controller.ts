@@ -12,9 +12,14 @@ async function renewAuthentication(req: Request, res: Response) {
     firebaseIdTokenExpiresIn: req.cookies.firebase_token_expiry,
   };
 
-  const accessToken = req.cookies.spinder_spotify_access_token || null;
-
-  await updateOrCreateSpinderUserData(renewAuthResponse.userId, accessToken);
+  const accessToken: string = req.cookies.spinder_spotify_access_token || null;
+  const refreshToken: string =
+    req.cookies.spinder_spotify_refresh_token || null;
+  await updateOrCreateSpinderUserData(
+    renewAuthResponse.userId,
+    accessToken,
+    refreshToken
+  );
 
   okResponse(req, res, renewAuthResponse);
 }

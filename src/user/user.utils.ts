@@ -1,5 +1,6 @@
 import {
   getFirestoreDoc,
+  isExistingFirestoreDoc,
   setFirestoreDoc,
 } from "../firebase/firebase.spinder.js";
 import { SpinderUserData, defaultSpinderUserData } from "./user.model.js";
@@ -7,7 +8,8 @@ import { userMarkerLog } from "../utils/logger.js";
 
 async function updateOrCreateSpinderUserData(
   userId: string,
-  accessToken: string
+  accessToken: string,
+  refreshToken: string
 ): Promise<SpinderUserData> {
   var spinderUserData = await getFirestoreDoc<SpinderUserData>(
     `users/${userId}`
@@ -16,6 +18,7 @@ async function updateOrCreateSpinderUserData(
   if (spinderUserData === null) {
     spinderUserData = { ...defaultSpinderUserData };
     spinderUserData.accessToken = accessToken;
+    spinderUserData.refreshToken = refreshToken;
     await setFirestoreDoc(`users/${userId}`, spinderUserData, false);
     userMarkerLog(
       `Set default Spinder user data at users/${userId} with defaultData - ${JSON.stringify(
@@ -25,6 +28,7 @@ async function updateOrCreateSpinderUserData(
     return spinderUserData;
   } else {
     spinderUserData.accessToken = accessToken;
+    spinderUserData.refreshToken = refreshToken;
     await setFirestoreDoc(`users/${userId}`, spinderUserData, false);
     userMarkerLog(
       `Updated existing Spinder user data at users/${userId}, data - ${JSON.stringify(
@@ -51,8 +55,13 @@ async function setSpinderUserData(
   return setFirestoreDoc(`users/${userId}`, spinderUserData, merge);
 }
 
+async function isUserOnline(userId: string): Promise<boolean> {
+  return await isExistingFirestoreDoc(`activeUsers/${userId}`);
+}
+
 export {
   updateOrCreateSpinderUserData,
   getSpinderUserData,
   setSpinderUserData,
+  isUserOnline,
 };

@@ -10,6 +10,7 @@ interface SpinderUserData {
   selectedDiscoverSource: DiscoverSource;
   selectedDiscoverDestination: DiscoverDestination;
   accessToken: string;
+  refreshToken: string;
 }
 
 const defaultSpinderUserData: SpinderUserData = {
@@ -17,6 +18,7 @@ const defaultSpinderUserData: SpinderUserData = {
   selectedDiscoverSource: defaultDiscoverSource,
   selectedDiscoverDestination: emptyDiscoverDestination,
   accessToken: "",
+  refreshToken: "",
 };
 
 export { SpinderUserData, defaultSpinderUserData };

@@ -1,9 +1,17 @@
 import { DiscoverSource } from "../discover/discover.model.js";
 import {
+  getFirestoreCollection,
+  getFirestoreDoc,
+  isExistingFirestoreDoc,
+} from "../firebase/firebase.spinder.js";
+import {
   getSpotifyRecommendations,
   getSpotifySeveralArtists,
   getSpotifyUserTopTracks,
+  refreshSpotifyAccessToken,
 } from "../spotify/spotify.api.js";
+import { SpinderUserData } from "../user/user.model.js";
+import { isUserOnline } from "../user/user.utils.js";
 import { getRandomItems } from "../utils/utils.js";
 import { DeckItem, DeckItemArtist } from "./deck.model.js";
 
@@ -19,6 +27,7 @@ async function getDeckTracks(
       deckItems = await getAnythingMeTracks(accessToken);
       break;
     case "Spinder People":
+      deckItems = await getSpinderPeopleTracks();
       break;
     case "My Artists":
       break;
@@ -42,15 +51,19 @@ async function getDeckTracks(
   return deckItems;
 }
 
-async function getAnythingMeTracks(accessToken: string): Promise<DeckItem[]> {
+async function getAnythingMeTracks(
+  accessToken: string,
+  count: number = 50
+): Promise<DeckItem[]> {
+  const halfCount = count / 2;
   //Get just 1 top track only to obtain the total number of available top tracks.
   const oneTrack = await getSpotifyUserTopTracks(accessToken, 0, 1);
   //Calculate the maximum possible offset. We cannot offset more than the total minus the number of tracks we want.
-  const maxOffset = Math.max(oneTrack.total - 25, 0);
+  const maxOffset = Math.max(oneTrack.total - halfCount, 0);
   //Compute a random offset between 0 (inclusive) and the maxOffset (inclusive).
   const offset = Math.round(Math.random() * maxOffset);
   //Compute limit. We want to get 25 tracks, but we may not have up to that.
-  const limit = Math.min(oneTrack.total - offset, 25);
+  const limit = Math.min(oneTrack.total - offset, halfCount);
   //Get the user's top tracks between with offset and limit.
   const topTracks = await getSpotifyUserTopTracks(accessToken, offset, limit);
   //Select up to 5 random tracks from our top tracks to use as reccommendation seeds.
@@ -59,7 +72,7 @@ async function getAnythingMeTracks(accessToken: string): Promise<DeckItem[]> {
   const recommendationTracks = await getSpotifyRecommendations(
     accessToken,
     randomTopTracks,
-    25
+    halfCount
   );
   //Shuffling is pointless here because firestore by default orders data by id. If we want shuffling, it has to be implemented there.
   const anythingMeTracks = [...topTracks.items, ...recommendationTracks.tracks];
@@ -123,6 +136,28 @@ async function getAnythingMeTracks(accessToken: string): Promise<DeckItem[]> {
     }
   );
   return anythingMeDeckTracks;
+}
+
+async function getSpinderPeopleTracks() {
+  //Get up to 5 Spinder users at random and get top tracks for each of them.
+  const spinderUsers = await getFirestoreCollection("users"); //TODO: This won't scale. Change to a proper firestore query.
+  const randomUsers = getRandomItems(spinderUsers.docs, 5);
+
+  const deckItems: DeckItem[] = [];
+  for (var i = 0; i < randomUsers.length; i++) {
+    const userId = randomUsers[i].id;
+    const userData = randomUsers[i].data() as SpinderUserData;
+    const isOnline = await isUserOnline(userId);
+    var accessToken = userData.accessToken; //An online user will always have a valid spotify access token.
+    if (!isOnline) {
+      accessToken = (await refreshSpotifyAccessToken(userData.refreshToken))
+        .access_token; //We can refresh tokens for offline users without worry because they will refresh again when they come back online.
+    }
+    const userTopTracks = await getAnythingMeTracks(accessToken, 10);
+    deckItems.push(...userTopTracks);
+  }
+
+  return deckItems;
 }
 
 export { getDeckTracks };

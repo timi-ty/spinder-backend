@@ -84,8 +84,8 @@ async function refillSourceDeck(userId: string) {
       userData.accessToken
     );
     const newDeckItemsMap: Map<string, DeckItem> = new Map();
-    newDeckItems.forEach((topTrack) => {
-      newDeckItemsMap.set(topTrack.trackId, topTrack);
+    newDeckItems.forEach((deckItem) => {
+      newDeckItemsMap.set(deckItem.trackId, deckItem);
     });
     if (newDeckItemsMap.size < 1) {
       throw new Error(
@@ -115,7 +115,7 @@ async function attachCurator() {
   //Calls progressivelyFillUpDeck for every user in the activeUsers collection.
   //Attaches listeners on the source deck and the yes deck.
   listenToFirestoreCollection("activeUsers", (snapshot) => {
-    snapshot.docChanges().forEach(async (change) => {
+    snapshot.docChanges().forEach((change) => {
       if (change.type === "added") {
         const userId = change.doc.id;
         deckLogger.debug(`Found new active user ${userId}.`);
@@ -185,7 +185,7 @@ function attachYesDeckListener(userId: string) {
         };
         addTracksToSpotifyUserPlaylist(
           spinderUserData?.accessToken || "",
-          spinderUserData?.selectedDiscoverDestination.id || "",
+          spinderUserData?.selectedDiscoverDestination?.id || "",
           newTracks.map((track) => track.trackUri),
           onTracksAdded
         );

@@ -29,16 +29,23 @@ async function getDiscoverDestinations(
   next: (error: SpinderServerError) => void
 ) {
   try {
-    const accessToken = req.cookies.spinder_spotify_access_token || null;
-    const userId = req.cookies.userId || null;
-    const offset = +(req.query.offset || "0");
+    const accessToken: string =
+      req.cookies.spinder_spotify_access_token || null;
+    const userId: string = req.cookies.userId || null;
+    const offset: number = +(req.query.offset || "0");
     const discoverDestinations = await getCountOrAllOwnedSpotifyPlaylists(
       accessToken,
       userId,
       10,
       offset
     );
-    const userData = await updateOrCreateSpinderUserData(userId, accessToken);
+    const refreshToken: string =
+      req.cookies.spinder_spotify_refresh_token || null;
+    const userData = await updateOrCreateSpinderUserData(
+      userId,
+      accessToken,
+      refreshToken
+    );
     if (
       userData.selectedDiscoverDestination.id === "" &&
       discoverDestinations.availableDestinations.length > 0
@@ -69,7 +76,7 @@ async function setDiscoverDestination(
   next: (error: SpinderServerError) => void
 ) {
   const destination = req.query.destination || null;
-  const userId = req.cookies.userId || null;
+  const userId: string = req.cookies.userId || null;
   try {
     if (!destination) throw new Error("Invalid destination."); //Replace with more sophisticated validation.
     const data: DiscoverDestination = safeParseJson(destination as string); //as string should no longer be needed if destination is properly validated.
@@ -97,9 +104,16 @@ async function getDiscoverSourceTypes(
   next: (error: SpinderServerError) => void
 ) {
   try {
-    const accessToken = req.cookies.spinder_spotify_access_token || null;
-    const userId = req.cookies.userId || null;
-    const userData = await updateOrCreateSpinderUserData(userId, accessToken);
+    const accessToken: string =
+      req.cookies.spinder_spotify_access_token || null;
+    const userId: string = req.cookies.userId || null;
+    const refreshToken: string =
+      req.cookies.spinder_spotify_refresh_token || null;
+    const userData = await updateOrCreateSpinderUserData(
+      userId,
+      accessToken,
+      refreshToken
+    );
     var discoverSourceTypesData: DiscoverSourceData = {
       selectedSource: userData.selectedDiscoverSource,
       availableSources: [
@@ -150,7 +164,7 @@ async function searchDiscoverSources(
 ) {
   try {
     const q = req.query.q || "";
-    const accessToken = req.cookies.spinder_spotify_access_token || "";
+    const accessToken: string = req.cookies.spinder_spotify_access_token || "";
 
     const spotifySearchResult = searchSpotify(accessToken, q as string);
     const artistSources = (await spotifySearchResult).artists.items.map(
@@ -197,7 +211,7 @@ async function setDiscoverSource(
   next: (error: SpinderServerError) => void
 ) {
   const source = req.query.source || null;
-  const userId = req.cookies.userId || null;
+  const userId: string = req.cookies.userId || null;
   try {
     if (!source) throw new Error("Invalid source."); //Replace with more sophisticated validation.
     const data: DiscoverSource = safeParseJson(source as string); //as sring should no longer be needed if destination is properly validated.

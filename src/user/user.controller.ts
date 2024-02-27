@@ -10,7 +10,8 @@ async function returnSpotifyUserProfile(
   next: (error: SpinderServerError) => void
 ) {
   try {
-    const accessToken = req.cookies.spinder_spotify_access_token || null;
+    const accessToken: string =
+      req.cookies.spinder_spotify_access_token || null;
     var userProfile: SpotifyUserProfileData;
     userProfile = await getSpotifyUserProfile(accessToken);
     okResponse(req, res, userProfile);

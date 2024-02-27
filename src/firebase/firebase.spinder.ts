@@ -183,6 +183,18 @@ async function getFirestoreDoc<T>(docPath: string): Promise<T | null> {
   return doc.exists ? (doc.data() as T) : null;
 }
 
+async function isExistingFirestoreDoc<T>(docPath: string): Promise<boolean> {
+  if (!firestore) {
+    throw new Error(
+      "Failed to get doc. firestore object does not exist. Call startFirebaseApp before calling any other functions."
+    );
+  }
+
+  const docRef = firestore.doc(docPath);
+  const doc = await docRef.get();
+  return doc.exists;
+}
+
 async function setFirestoreDoc(
   docPath: string,
   data: any,
@@ -277,6 +289,7 @@ export {
   batchDeleteFirestoreDocs,
   clearFirestoreCollection,
   getFirestoreDoc,
+  isExistingFirestoreDoc,
   setFirestoreDoc,
   updateFirestoreDoc,
   deleteFirestoreDoc,
