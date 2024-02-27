@@ -13,6 +13,7 @@ import {
   getSpotifyUserPlaylists,
   getSpotifyUserTopTracks,
   refreshSpotifyAccessToken,
+  searchSpotify,
 } from "../spotify/spotify.api.js";
 import { SpotifyTrack } from "../spotify/spotify.model.js";
 import { SpinderUserData } from "../user/user.model.js";
@@ -41,6 +42,7 @@ async function getDeckTracks(
       deckItems = await getMyPlaylistsTracks(accessToken);
       break;
     case "Vibe":
+      deckItems = await getVibeTracks(accessToken, source.name);
       break;
     case "Spinder Person":
       deckItems = await getSpinderPersonTracks(source.id);
@@ -496,6 +498,88 @@ async function getPlaylistTracks(
     };
   });
   return playlistDeckTracks;
+}
+
+async function getVibeTracks(accessToken: string, vibe: string) {
+  const spotifySearchResult = await searchSpotify(accessToken, vibe);
+  //Select up to 5 random playlists from our playlists to get tracks from.
+  const randomPlaylists = getRandomItems(
+    spotifySearchResult.playlists.items,
+    5
+  ); //TODO: Find a way to always add the first playlist result only once.
+  const vibePlaylistsracks: SpotifyTrack[] = [];
+
+  for (var i = 0; i < randomPlaylists.length; i++) {
+    const playlist = randomPlaylists[i];
+    const playlistTracks = await getSpotifyUserPlaylistTracks(
+      accessToken,
+      playlist.id,
+      0,
+      10
+    ); //TODO: Get a random set of 10 tracks from the playlist instead of just the first 10.
+    vibePlaylistsracks.push(...playlistTracks.items.map((item) => item.track));
+  }
+
+  const artistIds = vibePlaylistsracks.map((track) =>
+    track.artists.length > 0 ? track.artists[0].id : "0TnOYISbd1XYRBk9myaseg"
+  );
+  const artistsDetails = (
+    await getSpotifySeveralArtists(accessToken, artistIds)
+  ).artists;
+
+  const vibePlaylistsDeckTracks: DeckItem[] = vibePlaylistsracks.map(
+    (track, index) => {
+      const relatedSources: DiscoverSource[] = [];
+      track.artists.forEach((artist) => {
+        const artistSource: DiscoverSource = {
+          type: "Artist",
+          id: artist.id,
+          name: artist.name,
+          image:
+            artistsDetails[index].images.length > 0
+              ? artistsDetails[index].images[0].url
+              : "",
+        };
+        relatedSources.push(artistSource);
+      });
+
+      artistsDetails[index].genres.forEach((genre) => {
+        const vibeSource: DiscoverSource = {
+          type: "Vibe",
+          id: genre,
+          name: genre,
+          image:
+            artistsDetails[index].images.length > 0
+              ? artistsDetails[index].images[0].url
+              : "",
+        };
+        relatedSources.push(vibeSource);
+      });
+
+      const artists = track.artists.map((artist) => {
+        const deckArtist: DeckItemArtist = {
+          artistName: artist.name,
+          artistUri: artist.uri,
+          artistImage:
+            artistsDetails[index].images.length > 0
+              ? artistsDetails[index].images[0].url
+              : "",
+        };
+        return deckArtist;
+      });
+
+      return {
+        trackId: track.id,
+        image: track.album.images.length > 0 ? track.album.images[0].url : "",
+        previewUrl: track.preview_url,
+        trackName: track.name,
+        trackUri: track.uri,
+        artists: artists,
+        relatedSources: relatedSources,
+      };
+    }
+  );
+  return vibePlaylistsDeckTracks;
 }
 
 export { getDeckTracks };
