@@ -2,8 +2,9 @@ import { HttpStatusCode } from "axios";
 import { Request, Response } from "express";
 import { appLogger } from "./logger.js";
 
-const fiveMinutesInMillis = 300000; //5 minutes in millis
-const oneYearInMillis = 31536000000; //1 year in millis
+const fiveMinutesInMillis = 300000;
+const oneHourInMillis = 3600000;
+const oneYearInMillis = 31536000000;
 
 class SpinderServerError {
   status: number;
@@ -61,6 +62,7 @@ function safeParseJson(jsonString: string) {
 
 export {
   fiveMinutesInMillis,
+  oneHourInMillis,
   oneYearInMillis,
   SpinderServerError,
   SpinderClientError,

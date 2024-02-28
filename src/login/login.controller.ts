@@ -11,6 +11,7 @@ import {
   fiveMinutesInMillis,
   okRedirect,
   okResponse,
+  oneHourInMillis,
   oneYearInMillis,
 } from "../utils/utils.js";
 import { loginLogger } from "../utils/logger.js";
@@ -87,7 +88,7 @@ async function finishLoginWithSpotify(
       loginLogger.debug(
         `Finished login: Token - ${authToken.accessToken}, Expiry - ${authToken.maxAge}`
       );
-      okRedirect(req, res, process.env.FRONTEND_FINALIZE_LOGIN || ""); //Tell the front-end to call the finalize login endpoint.
+      okRedirect(req, res, process.env.FRONTEND_ROOT || ""); //Tell the front-end to call the finalize login endpoint.
     } catch (error) {
       console.error(error);
       next(
@@ -173,7 +174,7 @@ async function finalizeLogin(
       "spinder_firebase_custom_token",
       finalizeLoginData.firebaseCustomToken,
       {
-        maxAge: oneYearInMillis,
+        maxAge: oneHourInMillis,
         httpOnly: true,
         secure: true,
       }
