@@ -6,6 +6,7 @@ import {
 import {
   getDiscoverDestinations,
   getDiscoverSourceTypes,
+  refreshDeck,
   searchDiscoverSources,
   setDiscoverDestination,
   setDiscoverSource,
@@ -37,7 +38,7 @@ function assembleDiscoverRouter(router: Router) {
 
   discoverRouter.post("/destination", setDiscoverDestination);
 
-  discoverRouter.post("/refresh", setDiscoverDestination);
+  discoverRouter.get("/refresh", refreshDeck);
 
   //Handle login errors.
   discoverRouter.use(discoverErrorHandler);
