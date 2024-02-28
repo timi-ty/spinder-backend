@@ -29,7 +29,7 @@ const spotifyLoginStates: Map<string, string> = new Map(); //This map associates
 function startLoginWithSpotify(req: Request, res: Response) {
   const state = randomstring.generate(16);
   const scope =
-    "user-read-private user-read-email playlist-read-private user-top-read playlist-modify-public playlist-modify-private";
+    "user-read-private user-read-email playlist-read-private user-top-read playlist-modify-public playlist-modify-private user-library-read";
 
   const uniqueId = uuidv4();
   spotifyLoginStates.set(uniqueId, state); //Associate every login request with a unique id.
