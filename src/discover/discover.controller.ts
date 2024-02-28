@@ -57,6 +57,13 @@ async function getDiscoverDestinations(
     }
     discoverDestinations.selectedDestination =
       userData.selectedDiscoverDestination;
+    //Add favourites as the first destination
+    const destinationFavourites: DiscoverDestination = {
+      name: "Favourites",
+      image: "src/assets/ic_favourites_heart.svg", //TODO: look into hosting app level images on firebase storage
+      id: "favourites",
+    };
+    discoverDestinations.availableDestinations.unshift(destinationFavourites);
     okResponse(req, res, discoverDestinations);
   } catch (error) {
     console.error(error);
