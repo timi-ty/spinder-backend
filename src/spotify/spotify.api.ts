@@ -167,6 +167,35 @@ async function getSpotifyUserPlaylistTracks(
   }
 }
 
+// Offset and limit are only used if the next url is not supplied.
+async function getSpotifyUserSavedTracks(
+  accessToken: string,
+  offset: number,
+  limit: number = 50,
+  next: string = `
+  https://api.spotify.com/v1/me/tracks?offset=${offset}&limit=${limit}`
+): Promise<SpotifyPlaylistTracks> {
+  spotifyLogger.debug(`Getting user spotify saved tracks at url ${next}`);
+  const response = await fetch(next, {
+    headers: {
+      Authorization: "Bearer " + accessToken,
+    },
+  });
+
+  if (response.status === HttpStatusCode.Ok) {
+    const spotifyPlaylistTracks: SpotifyPlaylistTracks = await response.json();
+    //We do this because we want to tell the frontend how far we've gone in the search.
+    //The frontend can then call the endpoint again with the last offset it obtained to continue the search.
+    spotifyPlaylistTracks.offset = offset + spotifyPlaylistTracks.items.length;
+    return spotifyPlaylistTracks;
+  } else {
+    const spotifyErrorResponse: SpotifyErrorResponse = await response.json();
+    throw new Error(
+      `Status: ${spotifyErrorResponse.error.status}, Message: ${spotifyErrorResponse.error.message}`
+    );
+  }
+}
+
 async function getSpotifyUserTopTracks(
   accessToken: string,
   offset: number,
@@ -379,4 +408,5 @@ export {
   getSpotifySeveralArtists,
   getSpotifyFollowedArtists,
   getSpotifyUserPlaylistTracks,
+  getSpotifyUserSavedTracks,
 };

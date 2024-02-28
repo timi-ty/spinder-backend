@@ -2,7 +2,7 @@ import {
   DiscoverDestination,
   DiscoverSource,
   defaultDiscoverSource,
-  emptyDiscoverDestination,
+  defaultDiscoverDestination,
 } from "../discover/discover.model.js";
 
 interface SpinderUserData {
@@ -16,7 +16,7 @@ interface SpinderUserData {
 const defaultSpinderUserData: SpinderUserData = {
   name: "",
   selectedDiscoverSource: defaultDiscoverSource,
-  selectedDiscoverDestination: emptyDiscoverDestination,
+  selectedDiscoverDestination: defaultDiscoverDestination,
   accessToken: "",
   refreshToken: "",
 };

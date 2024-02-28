@@ -1,26 +1,32 @@
 import {
+  DiscoverDestination,
+  DiscoverSource,
+} from "../discover/discover.model.js";
+import {
   attachPresenceWatcher,
   batchDeleteFirestoreDocs,
   batchSetFirestoreDocs,
+  clearFirestoreCollection,
   deleteFirestoreDoc,
   getFirestoreCollectionSize,
-  listenToFirestoreCollection,
+  isExistingFirestoreDoc,
   setFirestoreDoc,
 } from "../firebase/firebase.spinder.js";
-import { addTracksToSpotifyUserPlaylist } from "../spotify/spotify.api.js";
+import {
+  getSpotifyUserPlaylistTracks,
+  getSpotifyUserSavedTracks,
+} from "../spotify/spotify.api.js";
 import { getSpinderUserData } from "../user/user.utils.js";
 import { deckLogger } from "../utils/logger.js";
 import { getDeckTracks } from "./deck.filler.js";
 import { DeckItem } from "./deck.model.js";
 
 const sourceDeckMinSize = 20;
-const sourceDeckListenerMap: Map<string, () => void> = new Map();
-const yesDeckListenerMap: Map<string, () => void> = new Map();
-const deckFillerSet: Set<string> = new Set();
+const sourceDeckFillerSet: Set<string> = new Set();
+const destDeckEnumeratorSet: Set<string> = new Set();
 
 function startDeckService() {
-  attachPresenceWatcher(onPresenceChanged);
-  attachCurator();
+  attachPresenceWatcher(onPresenceChanged); //Currently, a user's presence is only useful for the deck filler, which is why it is attached here.
 }
 
 function onPresenceChanged(userId: string, isOnline: boolean) {
@@ -50,14 +56,22 @@ async function onUserInactive(userId: string) {
   }
 }
 
-async function refillSourceDeck(userId: string) {
-  if (deckFillerSet.has(userId)) {
+async function isUserOnline(userId: string): Promise<boolean> {
+  return await isExistingFirestoreDoc(`activeUsers/${userId}`);
+}
+
+async function refillSourceDeck(
+  userId: string,
+  accessToken: string,
+  selectedDiscoverSource: DiscoverSource
+) {
+  if (sourceDeckFillerSet.has(userId)) {
     deckLogger.warn(
       `Another deck filler is currently running for user ${userId}. Aborting this one...`
     );
     return;
   }
-  deckFillerSet.add(userId);
+  sourceDeckFillerSet.add(userId);
 
   try {
     const sourceDeckCollectionPath = `users/${userId}/sourceDeck`;
@@ -72,15 +86,13 @@ async function refillSourceDeck(userId: string) {
       deckLogger.debug(
         `User ${userId}'s source deck is full enough. Aborting refill...`
       );
-      deckFillerSet.delete(userId);
+      sourceDeckFillerSet.delete(userId);
       return;
     }
 
-    const userData = await getSpinderUserData(userId);
-
     const newDeckItems = await getDeckTracks(
-      userData.selectedDiscoverSource,
-      userData.accessToken
+      selectedDiscoverSource,
+      accessToken
     );
     const newDeckItemsMap: Map<string, DeckItem> = new Map();
     newDeckItems.forEach((deckItem) => {
@@ -101,102 +113,98 @@ async function refillSourceDeck(userId: string) {
     await batchSetFirestoreDocs(sourceDeckCollectionPath, newDeckItemsMap);
   } catch (error) {
     //Filling up a user's deck is an important but expendable process since it runs repeatedly. If it fails, it fails quietly and takes no further action.
-    deckFillerSet.delete(userId);
     console.error(error);
     deckLogger.warn(
       `An error occured while fillng up source deck for user ${userId}. Aborting this refill...`
     );
   }
-  deckFillerSet.delete(userId);
+  sourceDeckFillerSet.delete(userId);
 }
 
-async function attachCurator() {
-  //Calls progressivelyFillUpDeck for every user in the activeUsers collection.
-  //Attaches listeners on the source deck and the yes deck.
-  listenToFirestoreCollection("activeUsers", (snapshot) => {
-    snapshot.docChanges().forEach((change) => {
-      if (change.type === "added") {
-        const userId = change.doc.id;
-        deckLogger.debug(`Found new active user ${userId}.`);
-        refillSourceDeck(userId); //Dispatch for different users without awaiting.
-        attachSourceDeckListener(userId);
-        attachYesDeckListener(userId);
-      }
-      if (change.type === "removed") {
-        const userId = change.doc.id;
-        deckLogger.debug(
-          `Lost formerly active user ${userId}. Unsubscribing their deck listeners...`
+async function enumerateDestinationDeck(
+  userId: string,
+  accessToken: string,
+  selectedDiscoverDestination: DiscoverDestination
+) {
+  if (destDeckEnumeratorSet.has(userId)) {
+    deckLogger.warn(
+      `Another deck enumerator is currently running for user ${userId}. Aborting this one...`
+    );
+    return;
+  }
+  destDeckEnumeratorSet.add(userId);
+  const destDeckCollectionPath = `users/${userId}/destinationDeck`;
+  const destDeckItemsMap: Map<string, {}> = new Map();
+
+  await clearFirestoreCollection(destDeckCollectionPath);
+
+  try {
+    if (selectedDiscoverDestination.isFavourites) {
+      var savedTracks = await getSpotifyUserSavedTracks(accessToken, 0, 50);
+      savedTracks.items.forEach((item) =>
+        destDeckItemsMap.set(item.track.id, {})
+      );
+      const maxIterations = 10; //If you have more than 550 items in your playlist, spinder will ignore the rest :)
+      for (var i = 0; i < maxIterations; i++) {
+        if (!savedTracks.next) break;
+        savedTracks = await getSpotifyUserPlaylistTracks(
+          accessToken,
+          selectedDiscoverDestination.id,
+          -1,
+          -1,
+          savedTracks.next
         );
-        const unsubSource = sourceDeckListenerMap.get(userId) || null;
-        const unsubYes = yesDeckListenerMap.get(userId) || null;
-        if (unsubSource) unsubSource();
-        if (unsubYes) unsubYes();
-      }
-    });
-  });
-}
-
-//Calls progressivelyFillUpDeck if the user's  source tracks < sourceDeckMinSize and the user just removed a track.
-function attachSourceDeckListener(userId: string) {
-  const sourceDeckCollectionPath = `users/${userId}/sourceDeck`;
-  const sourceDeckListenerUnsub = listenToFirestoreCollection(
-    sourceDeckCollectionPath,
-    (snapshot) => {
-      var hasRemoval = false;
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === "removed") {
-          deckLogger.debug(
-            `User ${userId} removed ${change.doc.id} from their source deck.`
-          );
-          hasRemoval = true;
-        }
-      });
-      if (hasRemoval && snapshot.size < sourceDeckMinSize)
-        refillSourceDeck(userId);
-    }
-  );
-  sourceDeckListenerMap.set(userId, sourceDeckListenerUnsub);
-}
-
-//Transfers tracks from the yes deck to the user's destination every time it detects a change.
-function attachYesDeckListener(userId: string) {
-  const yesDeckCollectionPath = `users/${userId}/yesDeck`;
-  const yesDeckListenerUnsub = listenToFirestoreCollection(
-    yesDeckCollectionPath,
-    async (snapshot) => {
-      const newTracks: DeckItem[] = [];
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === "added") {
-          deckLogger.debug(
-            `User ${userId} added ${change.doc.id} to their yes deck.`
-          );
-          newTracks.push(change.doc.data() as DeckItem);
-        }
-      });
-      if (newTracks.length < 1) return;
-      try {
-        const spinderUserData = await getSpinderUserData(userId);
-        const onTracksAdded = () => {
-          batchDeleteFirestoreDocs(
-            yesDeckCollectionPath,
-            newTracks.map((track) => track.trackId)
-          );
-        };
-        addTracksToSpotifyUserPlaylist(
-          spinderUserData?.accessToken || "",
-          spinderUserData?.selectedDiscoverDestination?.id || "",
-          newTracks.map((track) => track.trackUri),
-          onTracksAdded
+        savedTracks.items.forEach((item) =>
+          destDeckItemsMap.set(item.track.id, {})
         );
-      } catch (error) {
-        console.error(error);
-        deckLogger.warn(
-          `An error occured while saving the yes deck for user ${userId} to their selected playlist. Aborting this attempt...`
+      }
+    } else {
+      var playlistTracks = await getSpotifyUserPlaylistTracks(
+        accessToken,
+        selectedDiscoverDestination.id,
+        0,
+        50
+      );
+      playlistTracks.items.forEach((item) =>
+        destDeckItemsMap.set(item.track.id, {})
+      );
+      const maxIterations = 10; //If you have more than 550 items in your playlist, spinder will ignore the rest :)
+      for (var i = 0; i < maxIterations; i++) {
+        if (!playlistTracks.next) break;
+        playlistTracks = await getSpotifyUserPlaylistTracks(
+          accessToken,
+          selectedDiscoverDestination.id,
+          -1,
+          -1,
+          playlistTracks.next
+        );
+        playlistTracks.items.forEach((item) =>
+          destDeckItemsMap.set(item.track.id, {})
         );
       }
     }
-  );
-  yesDeckListenerMap.set(userId, yesDeckListenerUnsub);
+
+    deckLogger.debug(
+      `Enumerating ${
+        destDeckItemsMap.size
+      } items to destination deck for user ${userId}, Deck Items: ${JSON.stringify(
+        destDeckItemsMap
+      )}`
+    );
+    await batchSetFirestoreDocs(destDeckCollectionPath, destDeckItemsMap);
+  } catch (error) {
+    //If an error occurs while enumerating the destination deck, the like feature works partially but sufficiently. If it fails, it fails quietly and takes no further action.
+    console.error(error);
+    deckLogger.warn(
+      `An error occured while enumerating destination deck for user ${userId}. Aborting the enumeration...`
+    );
+  }
+  destDeckEnumeratorSet.delete(userId);
 }
 
-export { startDeckService, refillSourceDeck };
+export {
+  startDeckService,
+  refillSourceDeck,
+  enumerateDestinationDeck,
+  isUserOnline,
+};

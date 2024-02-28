@@ -1,20 +1,20 @@
 import {
   DiscoverDestinationData,
   DiscoverDestination,
-  emptyDiscoverDestination,
+  defaultDiscoverDestination,
 } from "./discover.model.js";
 import { discoverLogger } from "../utils/logger.js";
 import { SpotifyPlaylists } from "../spotify/spotify.model.js";
 import { getSpotifyUserPlaylists } from "../spotify/spotify.api.js";
 
-async function getCountOrAllOwnedSpotifyPlaylists(
+async function getCountOrAllOwnedSpotifyPlaylistsAsDiscoverDestinations(
   accessToken: string,
   userId: string,
   count: number,
   offset: number
 ): Promise<DiscoverDestinationData> {
   var spotifyPlaylists = await getSpotifyUserPlaylists(accessToken, offset);
-  var ownedSpotifyPlaylists = filterOwnedSpotifyPlaylists(
+  var ownedSpotifyPlaylists = filterOwnedSpotifyPlaylistsToDiscoverDestinations(
     spotifyPlaylists,
     userId
   );
@@ -30,10 +30,11 @@ async function getCountOrAllOwnedSpotifyPlaylists(
       50,
       spotifyPlaylists.next
     );
-    const moreOwnedSpotifyPlaylists = filterOwnedSpotifyPlaylists(
-      spotifyPlaylists,
-      userId
-    );
+    const moreOwnedSpotifyPlaylists =
+      filterOwnedSpotifyPlaylistsToDiscoverDestinations(
+        spotifyPlaylists,
+        userId
+      );
     ownedSpotifyPlaylists = ownedSpotifyPlaylists.concat(
       moreOwnedSpotifyPlaylists
     );
@@ -45,13 +46,13 @@ async function getCountOrAllOwnedSpotifyPlaylists(
     offset: spotifyPlaylists.offset,
     total: spotifyPlaylists.total,
     availableDestinations: ownedSpotifyPlaylists,
-    selectedDestination: emptyDiscoverDestination, // Will be set by controller.
+    selectedDestination: defaultDiscoverDestination, // Will be set by controller.
   };
 
   return discoverDestinationData;
 }
 
-function filterOwnedSpotifyPlaylists(
+function filterOwnedSpotifyPlaylistsToDiscoverDestinations(
   spotifyPlaylists: SpotifyPlaylists,
   userId: string
 ): DiscoverDestination[] {
@@ -62,6 +63,7 @@ function filterOwnedSpotifyPlaylists(
         name: playlist.name,
         image: playlist.images.length > 0 ? playlist.images[0].url : "",
         id: playlist.id,
+        isFavourites: false,
       };
       discoverLogger.debug(
         `Found user owned playlist - ${discoverDestinationPlaylist.name}.`
@@ -71,4 +73,4 @@ function filterOwnedSpotifyPlaylists(
   return userOwnedPlaylists;
 }
 
-export { getCountOrAllOwnedSpotifyPlaylists };
+export { getCountOrAllOwnedSpotifyPlaylistsAsDiscoverDestinations };

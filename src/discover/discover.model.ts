@@ -23,9 +23,9 @@ interface DiscoverSource {
 
 const defaultDiscoverSource: DiscoverSource = {
   type: "Anything Me",
-  id: "Anything Me",
+  id: "anythingme",
   name: "Anything Me",
-  image: "",
+  image: "", //Explore storing these app level images in firebase storage instead of at the frontend.
 };
 
 interface DiscoverSourceData {
@@ -38,17 +38,19 @@ interface DiscoverSourceSearchResult {
   playlists: DiscoverSource[];
 }
 
-//For now, destination has to be a Spotify Playlist.
+//For now, destination has to be a Spotify Playlist or Spotify favourites.
 interface DiscoverDestination {
   name: string;
   image: string;
   id: string;
+  isFavourites: boolean;
 }
 
-const emptyDiscoverDestination: DiscoverDestination = {
-  name: "",
-  image: "",
-  id: "",
+const defaultDiscoverDestination: DiscoverDestination = {
+  name: "Favourites",
+  image: "src/assets/ic_favourites_heart.svg", //Explore storing these app level images in firebase storage instead of at the frontend.
+  id: "favourites",
+  isFavourites: true, //Spinder uses Spotify favourites as the default discover destination.
 };
 
 interface DiscoverDestinationData {
@@ -64,6 +66,6 @@ export {
   DiscoverSourceData,
   DiscoverSourceSearchResult,
   DiscoverDestination,
-  emptyDiscoverDestination,
+  defaultDiscoverDestination,
   DiscoverDestinationData,
 };

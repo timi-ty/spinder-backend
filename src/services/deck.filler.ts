@@ -1,9 +1,5 @@
 import { DiscoverSource } from "../discover/discover.model.js";
-import {
-  getFirestoreCollection,
-  getFirestoreDoc,
-  isExistingFirestoreDoc,
-} from "../firebase/firebase.spinder.js";
+import { getFirestoreCollection } from "../firebase/firebase.spinder.js";
 import {
   getSpotifyFollowedArtists,
   getSpotifyRecommendationsFromArtists,
@@ -17,9 +13,10 @@ import {
 } from "../spotify/spotify.api.js";
 import { SpotifyTrack } from "../spotify/spotify.model.js";
 import { SpinderUserData } from "../user/user.model.js";
-import { getSpinderUserData, isUserOnline } from "../user/user.utils.js";
+import { getSpinderUserData } from "../user/user.utils.js";
 import { getRandomItems } from "../utils/utils.js";
 import { DeckItem, DeckItemArtist } from "./deck.model.js";
+import { isUserOnline } from "./deck.service.js";
 
 //For the frontend to work, the backend has to respond here with at least 2 tracks.
 //Makesure that if the source has less than 2 tracks, we fill it up with more from elsewhere.

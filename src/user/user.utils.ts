@@ -55,13 +55,8 @@ async function setSpinderUserData(
   return setFirestoreDoc(`users/${userId}`, spinderUserData, merge);
 }
 
-async function isUserOnline(userId: string): Promise<boolean> {
-  return await isExistingFirestoreDoc(`activeUsers/${userId}`);
-}
-
 export {
   updateOrCreateSpinderUserData,
   getSpinderUserData,
   setSpinderUserData,
-  isUserOnline,
 };
