@@ -37,6 +37,8 @@ function assembleDiscoverRouter(router: Router) {
 
   discoverRouter.post("/destination", setDiscoverDestination);
 
+  discoverRouter.post("/refresh", setDiscoverDestination);
+
   //Handle login errors.
   discoverRouter.use(discoverErrorHandler);
 }

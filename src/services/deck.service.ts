@@ -200,4 +200,4 @@ function attachYesDeckListener(userId: string) {
   yesDeckListenerMap.set(userId, yesDeckListenerUnsub);
 }
 
-export { startDeckService };
+export { startDeckService, refillSourceDeck };

@@ -21,6 +21,7 @@ import {
   updateFirestoreDoc,
 } from "../firebase/firebase.spinder.js";
 import { searchSpotify } from "../spotify/spotify.api.js";
+import { refillSourceDeck } from "../services/deck.service.js";
 
 //Get the list of currently allowed discover destinations. The user's destination selection is part of the response.
 async function getDiscoverDestinations(
@@ -219,7 +220,7 @@ async function setDiscoverSource(
       selectedDiscoverSource: data,
     });
     await clearFirestoreCollection(`users/${userId}/sourceDeck`);
-    await okResponse(req, res, data);
+    okResponse(req, res, data);
   } catch (error) {
     console.error(error);
     next(
@@ -233,10 +234,21 @@ async function setDiscoverSource(
   }
 }
 
+async function refreshDeck(
+  req: Request,
+  res: Response,
+  next: (error: SpinderServerError) => void
+) {
+  const userId: string = req.cookies.userId || null;
+  refillSourceDeck(userId); //We can dispatch this and respond immediately because of firestore web sockets :)
+  okResponse(req, res, "ok");
+}
+
 export {
   getDiscoverSourceTypes,
   searchDiscoverSources,
   setDiscoverSource,
   getDiscoverDestinations,
   setDiscoverDestination,
+  refreshDeck,
 };
