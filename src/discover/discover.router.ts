@@ -8,6 +8,8 @@ import {
   getDiscoverSourceTypes,
   refreshDestinationDeck,
   refreshSourceDeck,
+  removeDeckItemFromDestination,
+  saveDeckItemToDestination,
   searchDiscoverSources,
   setDiscoverDestination,
   setDiscoverSource,
@@ -42,6 +44,10 @@ function assembleDiscoverRouter(router: Router) {
   discoverRouter.get("/deck/source/refresh", refreshSourceDeck);
 
   discoverRouter.get("/deck/destination/refresh", refreshDestinationDeck);
+
+  discoverRouter.get("/deck/destination/save", saveDeckItemToDestination);
+
+  discoverRouter.get("/deck/destination/remove", removeDeckItemFromDestination);
 
   //Handle login errors.
   discoverRouter.use(discoverErrorHandler);

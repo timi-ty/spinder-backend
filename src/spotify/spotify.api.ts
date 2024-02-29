@@ -6,11 +6,9 @@ import {
   SpotifyTopTracks,
   SpotifyToken,
   SpotifyRecommendations,
-  SpotifyTrack,
   SpotifySearchResult,
   SpotifySeveralArtists,
   SpotifyFollowedArtists,
-  SpotifyArtistDetails,
   SpotifyPlaylistTracks,
 } from "./spotify.model.js";
 import { spotifyLogger } from "../utils/logger.js";
@@ -272,51 +270,120 @@ async function getSpotifyRecommendationsFromArtists(
   }
 }
 
-function addTracksToSpotifyUserPlaylist(
+async function addTracksToSpotifyUserPlaylist(
   accessToken: string,
   playlistId: string,
-  uris: string[],
-  onTracksAdded: () => void = () => {}
+  uris: string[]
 ) {
   spotifyLogger.debug(`Adding to user spotify playlist ${playlistId}`);
 
-  var requestOptions = {
-    url: `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
-    form: {
-      uris: uris,
-    },
+  const url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks`;
+
+  const requestBody = {
+    uris: uris,
+  };
+
+  fetch(url, {
+    method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: "Bearer " + accessToken,
     },
-    json: true,
+    body: JSON.stringify(requestBody),
+  }).catch((error) => {
+    console.error(error);
+    throw new Error("Message: Failed to save track to playlist.");
+  });
+}
+
+async function removeTracksFromSpotifyUserPlaylist(
+  accessToken: string,
+  playlistId: string,
+  uris: string[]
+): Promise<void> {
+  spotifyLogger.debug(`Removing from user spotify playlist ${playlistId}`);
+
+  const url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks`;
+
+  const requestBody = {
+    tracks: uris.map((trackUri) => {
+      return { uri: trackUri };
+    }),
   };
 
-  axios
-    .post(requestOptions.url, requestOptions.form, {
-      headers: requestOptions.headers,
-    })
-    .then((response) => {
-      if (response.status === HttpStatusCode.Created) {
-        spotifyLogger.debug(
-          `Added ${uris.length} tracks to playlist ${playlistId}.`
-        );
-        onTracksAdded();
-        return;
-      }
-    })
-    .catch((error) => {
-      if (error.response) {
-        const spotifyErrorResponse: SpotifyErrorResponse = error.response.data;
-        spotifyLogger.error(
-          `Error adding tracks to playlist for user. Status: ${
-            spotifyErrorResponse.error.status
-          }, Message: ${JSON.stringify(spotifyErrorResponse.error.message)}`
-        );
-      } else {
-        console.log(error);
-      }
-    });
+  const response = await fetch(url, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + accessToken,
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (response.status !== HttpStatusCode.Ok) {
+    const spotifyErrorResponse: SpotifyErrorResponse = await response.json();
+    throw new Error(
+      `Status: ${spotifyErrorResponse.error.status}, Message: ${spotifyErrorResponse.error.message}`
+    );
+  }
+}
+
+async function addTracksToSpotifyUserSavedItems(
+  accessToken: string,
+  ids: string[]
+) {
+  spotifyLogger.debug(`Adding to user spotify saved items.`);
+
+  const url = `https://api.spotify.com/v1/me/tracks`;
+
+  const requestBody = {
+    ids: ids,
+  };
+
+  const response = await fetch(url, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + accessToken,
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (response.status !== HttpStatusCode.Ok) {
+    const spotifyErrorResponse: SpotifyErrorResponse = await response.json();
+    throw new Error(
+      `Status: ${spotifyErrorResponse.error.status}, Message: ${spotifyErrorResponse.error.message}`
+    );
+  }
+}
+
+async function removeTracksFromSpotifyUserSavedItems(
+  accessToken: string,
+  ids: string[]
+) {
+  spotifyLogger.debug(`Adding to user spotify saved items.`);
+
+  const url = `https://api.spotify.com/v1/me/tracks`;
+
+  const requestBody = {
+    ids: ids,
+  };
+
+  const response = await fetch(url, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + accessToken,
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (response.status !== HttpStatusCode.Ok) {
+    const spotifyErrorResponse: SpotifyErrorResponse = await response.json();
+    throw new Error(
+      `Status: ${spotifyErrorResponse.error.status}, Message: ${spotifyErrorResponse.error.message}`
+    );
+  }
 }
 
 async function searchSpotify(
@@ -400,6 +467,9 @@ export {
   getSpotifyUserPlaylists,
   getSpotifyUserTopTracks,
   addTracksToSpotifyUserPlaylist,
+  removeTracksFromSpotifyUserPlaylist,
+  addTracksToSpotifyUserSavedItems,
+  removeTracksFromSpotifyUserSavedItems,
   requestSpotifyAccessToken,
   refreshSpotifyAccessToken,
   getSpotifyRecommendationsFromTracks,

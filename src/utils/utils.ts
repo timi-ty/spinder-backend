@@ -53,7 +53,7 @@ function safeParseJson(jsonString: string) {
     if (typeof value === "string") {
       return value.replace(/\\u[\dA-Fa-f]{4}/g, (match) => {
         // Convert Unicode escape sequences to characters
-        return String.fromCharCode(parseInt(match.substr(2), 16));
+        return String.fromCharCode(parseInt(match.substring(2), 16));
       });
     }
     return value;

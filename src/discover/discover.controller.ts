@@ -15,13 +15,22 @@ import { updateOrCreateSpinderUserData } from "../user/user.utils.js";
 import { getCountOrAllOwnedSpotifyPlaylistsAsDiscoverDestinations } from "./discover.util.js";
 import {
   clearFirestoreCollection,
+  deleteFirestoreDoc,
+  setFirestoreDoc,
   updateFirestoreDoc,
 } from "../firebase/firebase.spinder.js";
-import { searchSpotify } from "../spotify/spotify.api.js";
+import {
+  addTracksToSpotifyUserPlaylist,
+  addTracksToSpotifyUserSavedItems,
+  removeTracksFromSpotifyUserPlaylist,
+  removeTracksFromSpotifyUserSavedItems,
+  searchSpotify,
+} from "../spotify/spotify.api.js";
 import {
   enumerateDestinationDeck,
   refillSourceDeck,
 } from "../services/deck.service.js";
+import { DeckItem } from "../services/deck.model.js";
 
 //Get the list of currently allowed discover destinations. The user's destination selection is part of the response.
 async function getDiscoverDestinations(
@@ -295,6 +304,80 @@ async function refreshDestinationDeck(
   }
 }
 
+async function saveDeckItemToDestination(
+  req: Request,
+  res: Response,
+  next: (error: SpinderServerError) => void
+) {
+  const userId: string = req.cookies.userId || null;
+  const accessToken: string = req.cookies.spinder_spotify_access_token || "";
+  const destination = req.query.destination || null;
+  const item = req.query.item || null;
+  try {
+    if (!destination || !item) throw new Error("Invalid destination or item."); //Replace with more sophisticated validation.
+    const selectedDestination: DiscoverDestination = safeParseJson(
+      destination as string
+    ); //as sring should no longer be needed if destination is properly validated.
+    const deckItem: DeckItem = safeParseJson(item as string);
+    if (selectedDestination.isFavourites) {
+      addTracksToSpotifyUserSavedItems(accessToken, [deckItem.trackId]); //We may want to consider awaiting these for better response accuracy.
+    } else {
+      addTracksToSpotifyUserPlaylist(accessToken, selectedDestination.id, [
+        deckItem.trackUri,
+      ]);
+    }
+    setFirestoreDoc(`users/${userId}/destinationDeck/${deckItem.trackId}`, {}); //Completely cosmetic. The frontend uses predictive logic for the like feature and refreshes on page reload which renders this essentially pointless.
+    okResponse(req, res, "saved");
+  } catch (error) {
+    console.error(error);
+    next(
+      new SpinderServerError(
+        HttpStatusCode.InternalServerError,
+        new Error(
+          "Failed to save item. This is most likely a Spotify call failure."
+        )
+      )
+    );
+  }
+}
+
+async function removeDeckItemFromDestination(
+  req: Request,
+  res: Response,
+  next: (error: SpinderServerError) => void
+) {
+  const userId: string = req.cookies.userId || null;
+  const accessToken: string = req.cookies.spinder_spotify_access_token || "";
+  const destination = req.query.destination || null;
+  const item = req.query.item || null;
+  try {
+    if (!destination || !item) throw new Error("Invalid destination or item."); //Replace with more sophisticated validation.
+    const selectedDestination: DiscoverDestination = safeParseJson(
+      destination as string
+    ); //as sring should no longer be needed if destination is properly validated.
+    const deckItem: DeckItem = safeParseJson(item as string);
+    if (selectedDestination.isFavourites) {
+      removeTracksFromSpotifyUserSavedItems(accessToken, [deckItem.trackId]); //We may want to consider awaiting these for better response accuracy.
+    } else {
+      removeTracksFromSpotifyUserPlaylist(accessToken, selectedDestination.id, [
+        deckItem.trackUri,
+      ]);
+    }
+    deleteFirestoreDoc(`users/${userId}/destinationDeck/${deckItem.trackId}`); //Completely cosmetic. The frontend uses predictive logic for the like feature and refreshes on page reload which renders this essentially pointless.
+    okResponse(req, res, "removed");
+  } catch (error) {
+    console.error(error);
+    next(
+      new SpinderServerError(
+        HttpStatusCode.InternalServerError,
+        new Error(
+          "Failed to unsave item. This is most likely a Spotify call failure."
+        )
+      )
+    );
+  }
+}
+
 export {
   getDiscoverSourceTypes,
   searchDiscoverSources,
@@ -303,4 +386,6 @@ export {
   setDiscoverDestination,
   refreshSourceDeck,
   refreshDestinationDeck,
+  saveDeckItemToDestination,
+  removeDeckItemFromDestination,
 };
