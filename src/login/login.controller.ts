@@ -167,6 +167,8 @@ async function finalizeLogin(
     const refreshToken = req.cookies.spinder_spotify_refresh_token || null;
     await updateOrCreateSpinderUserData(
       userProfile.id,
+      userProfile.display_name,
+      userProfile.images.length > 0 ? userProfile.images[0].url : "",
       accessToken,
       refreshToken
     );

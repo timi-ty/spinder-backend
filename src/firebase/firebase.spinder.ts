@@ -74,6 +74,25 @@ async function getFirestoreCollection(
   return col;
 }
 
+async function stringSearchFirestoreCollection(
+  collectionPath: string,
+  fieldPath: string,
+  searchString: string
+): Promise<QuerySnapshot> {
+  if (!firestore) {
+    throw new Error(
+      "Failed to get collection. firestore object does not exist. Call startFirebaseApp before calling any other functions."
+    );
+  }
+
+  const colRef = firestore.collection(collectionPath);
+  const col = await colRef
+    .where(fieldPath, ">=", searchString)
+    .where(fieldPath, "<=", searchString + "\uf8ff")
+    .get();
+  return col;
+}
+
 async function getFirestoreCollectionSize(
   collectionPath: string
 ): Promise<number> {
@@ -284,6 +303,7 @@ export {
   verifyAndDecodeFirebaseIdToken,
   getFirestoreCollection,
   getFirestoreCollectionSize,
+  stringSearchFirestoreCollection,
   listenToFirestoreCollection,
   batchSetFirestoreDocs,
   batchDeleteFirestoreDocs,

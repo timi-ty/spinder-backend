@@ -8,6 +8,8 @@ import { userMarkerLog } from "../utils/logger.js";
 
 async function updateOrCreateSpinderUserData(
   userId: string,
+  displayName: string | null,
+  image: string | null,
   accessToken: string,
   refreshToken: string
 ): Promise<SpinderUserData> {
@@ -19,6 +21,8 @@ async function updateOrCreateSpinderUserData(
     spinderUserData = { ...defaultSpinderUserData };
     spinderUserData.accessToken = accessToken;
     spinderUserData.refreshToken = refreshToken;
+    if (displayName) spinderUserData.name = displayName;
+    if (image) spinderUserData.image = image;
     await setFirestoreDoc(`users/${userId}`, spinderUserData, false);
     userMarkerLog(
       `Set default Spinder user data at users/${userId} with defaultData - ${JSON.stringify(
@@ -29,6 +33,8 @@ async function updateOrCreateSpinderUserData(
   } else {
     spinderUserData.accessToken = accessToken;
     spinderUserData.refreshToken = refreshToken;
+    if (displayName) spinderUserData.name = displayName;
+    if (image) spinderUserData.image = image;
     await setFirestoreDoc(`users/${userId}`, spinderUserData, false);
     userMarkerLog(
       `Updated existing Spinder user data at users/${userId}, data - ${JSON.stringify(

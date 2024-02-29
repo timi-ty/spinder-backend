@@ -7,6 +7,7 @@ import {
 
 interface SpinderUserData {
   name: string;
+  image: string;
   selectedDiscoverSource: DiscoverSource;
   selectedDiscoverDestination: DiscoverDestination;
   accessToken: string;
@@ -15,6 +16,7 @@ interface SpinderUserData {
 
 const defaultSpinderUserData: SpinderUserData = {
   name: "",
+  image: "",
   selectedDiscoverSource: defaultDiscoverSource,
   selectedDiscoverDestination: defaultDiscoverDestination,
   accessToken: "",

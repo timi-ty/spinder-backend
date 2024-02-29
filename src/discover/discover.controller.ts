@@ -17,6 +17,7 @@ import {
   clearFirestoreCollection,
   deleteFirestoreDoc,
   setFirestoreDoc,
+  stringSearchFirestoreCollection,
   updateFirestoreDoc,
 } from "../firebase/firebase.spinder.js";
 import {
@@ -31,6 +32,7 @@ import {
   refillSourceDeck,
 } from "../services/deck.service.js";
 import { DeckItem } from "../services/deck.model.js";
+import { SpinderUserData } from "../user/user.model.js";
 
 //Get the list of currently allowed discover destinations. The user's destination selection is part of the response.
 async function getDiscoverDestinations(
@@ -54,6 +56,8 @@ async function getDiscoverDestinations(
       req.cookies.spinder_spotify_refresh_token || null;
     const userData = await updateOrCreateSpinderUserData(
       userId,
+      null, //Leave the current name there.
+      null, // Leave the current image there.
       accessToken,
       refreshToken
     );
@@ -126,6 +130,8 @@ async function getDiscoverSourceTypes(
       req.cookies.spinder_spotify_refresh_token || null;
     const userData = await updateOrCreateSpinderUserData(
       userId,
+      null, // Leave the current name there.
+      null, // Leave the current image there.
       accessToken,
       refreshToken
     );
@@ -204,9 +210,22 @@ async function searchDiscoverSources(
         return playlistSource;
       }
     );
+    const spinderPeopleSources = (
+      await stringSearchFirestoreCollection("users", "name", q as string)
+    ).docs.map((doc) => {
+      const spinderUserData: SpinderUserData = doc.data() as SpinderUserData;
+      const spinderPersonSource: DiscoverSource = {
+        type: "Spinder Person",
+        id: doc.id,
+        name: spinderUserData.name,
+        image: spinderUserData.image,
+      };
+      return spinderPersonSource;
+    });
     const searchResult: DiscoverSourceSearchResult = {
       artists: artistSources,
       playlists: playlistSources,
+      spinderPeople: spinderPeopleSources,
     };
     okResponse(req, res, searchResult);
   } catch (error) {

@@ -1,3 +1,5 @@
+import { SpinderUserData } from "../user/user.model";
+
 //Composite sources function on their own as usable discover sources.
 type DiscoverCompositeSource =
   | "Anything Me" //Randomly get 25 tracks from the user's top items, and use 5 of those to seed spotify recommendations for another 25 tracks.
@@ -36,6 +38,7 @@ interface DiscoverSourceData {
 interface DiscoverSourceSearchResult {
   artists: DiscoverSource[];
   playlists: DiscoverSource[];
+  spinderPeople: DiscoverSource[];
 }
 
 //For now, destination has to be a Spotify Playlist or Spotify favourites.

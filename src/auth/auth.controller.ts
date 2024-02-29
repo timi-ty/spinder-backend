@@ -17,6 +17,8 @@ async function renewAuthentication(req: Request, res: Response) {
     req.cookies.spinder_spotify_refresh_token || null;
   await updateOrCreateSpinderUserData(
     renewAuthResponse.userId,
+    null, //Leave the current name there.
+    null, // Leave the current image there.
     accessToken,
     refreshToken
   );
