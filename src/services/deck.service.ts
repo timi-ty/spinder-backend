@@ -121,7 +121,16 @@ async function refillSourceDeck(
   sourceDeckFillerSet.delete(userId);
 }
 
-async function enumerateDestinationDeck(
+async function resetSourceDeck(
+  userId: string,
+  accessToken: string,
+  selectedSource: DiscoverSource
+) {
+  await clearFirestoreCollection(`users/${userId}/sourceDeck`);
+  refillSourceDeck(userId, accessToken, selectedSource);
+}
+
+async function resetDestinationDeck(
   userId: string,
   accessToken: string,
   selectedDiscoverDestination: DiscoverDestination
@@ -205,6 +214,7 @@ async function enumerateDestinationDeck(
 export {
   startDeckService,
   refillSourceDeck,
-  enumerateDestinationDeck,
+  resetSourceDeck,
+  resetDestinationDeck,
   isUserOnline,
 };

@@ -6,13 +6,14 @@ import {
 import { SpinderUserData, defaultSpinderUserData } from "./user.model.js";
 import { userMarkerLog } from "../utils/logger.js";
 
+//Returns the user data and whether or not this is a newly created user.
 async function updateOrCreateSpinderUserData(
   userId: string,
   displayName: string | null,
   image: string | null,
   accessToken: string,
   refreshToken: string
-): Promise<SpinderUserData> {
+): Promise<[SpinderUserData, boolean]> {
   var spinderUserData = await getFirestoreDoc<SpinderUserData>(
     `users/${userId}`
   );
@@ -29,7 +30,7 @@ async function updateOrCreateSpinderUserData(
         spinderUserData
       )}`
     );
-    return spinderUserData;
+    return [spinderUserData, true];
   } else {
     spinderUserData.accessToken = accessToken;
     spinderUserData.refreshToken = refreshToken;
@@ -41,7 +42,7 @@ async function updateOrCreateSpinderUserData(
         spinderUserData
       )}`
     );
-    return spinderUserData;
+    return [spinderUserData, false];
   }
 }
 

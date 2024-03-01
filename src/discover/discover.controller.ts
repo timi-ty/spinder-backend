@@ -11,7 +11,7 @@ import {
   DiscoverSourceSearchResult,
 } from "./discover.model.js";
 import { HttpStatusCode } from "axios";
-import { updateOrCreateSpinderUserData } from "../user/user.utils.js";
+import { getSpinderUserData } from "../user/user.utils.js";
 import { getCountOrAllOwnedSpotifyPlaylistsAsDiscoverDestinations } from "./discover.util.js";
 import {
   clearFirestoreCollection,
@@ -28,8 +28,9 @@ import {
   searchSpotify,
 } from "../spotify/spotify.api.js";
 import {
-  enumerateDestinationDeck,
+  resetDestinationDeck,
   refillSourceDeck,
+  resetSourceDeck,
 } from "../services/deck.service.js";
 import { DeckItem } from "../services/deck.model.js";
 import { SpinderUserData } from "../user/user.model.js";
@@ -52,15 +53,7 @@ async function getDiscoverDestinations(
         10,
         offset
       );
-    const refreshToken: string =
-      req.cookies.spinder_spotify_refresh_token || null;
-    const userData = await updateOrCreateSpinderUserData(
-      userId,
-      null, //Leave the current name there.
-      null, // Leave the current image there.
-      accessToken,
-      refreshToken
-    );
+    const userData = await getSpinderUserData(userId);
     discoverDestinations.selectedDestination =
       userData.selectedDiscoverDestination;
     //Add favourites as the first destination
@@ -101,7 +94,7 @@ async function setDiscoverDestination(
     await updateFirestoreDoc(`users/${userId}`, {
       selectedDiscoverDestination: discoverDestination,
     });
-    enumerateDestinationDeck(userId, accessToken, discoverDestination);
+    resetDestinationDeck(userId, accessToken, discoverDestination);
     okResponse(req, res, discoverDestination);
   } catch (error) {
     console.error(error);
@@ -123,18 +116,8 @@ async function getDiscoverSourceTypes(
   next: (error: SpinderServerError) => void
 ) {
   try {
-    const accessToken: string =
-      req.cookies.spinder_spotify_access_token || null;
     const userId: string = req.cookies.userId || null;
-    const refreshToken: string =
-      req.cookies.spinder_spotify_refresh_token || null;
-    const userData = await updateOrCreateSpinderUserData(
-      userId,
-      null, // Leave the current name there.
-      null, // Leave the current image there.
-      accessToken,
-      refreshToken
-    );
+    const userData = await getSpinderUserData(userId);
     var discoverSourceTypesData: DiscoverSourceData = {
       selectedSource: userData.selectedDiscoverSource,
       availableSources: [
@@ -253,8 +236,7 @@ async function setDiscoverSource(
     await updateFirestoreDoc(`users/${userId}`, {
       selectedDiscoverSource: selectedSource,
     });
-    await clearFirestoreCollection(`users/${userId}/sourceDeck`);
-    refillSourceDeck(userId, accessToken, selectedSource); //Dispatches and responds immediately. The frontend listens to the source deck filling up.
+    resetSourceDeck(userId, accessToken, selectedSource); //Dispatches and responds immediately. The frontend listens to the source deck filling up.
     okResponse(req, res, selectedSource);
   } catch (error) {
     console.error(error);
@@ -269,17 +251,16 @@ async function setDiscoverSource(
   }
 }
 
-async function refreshSourceDeck(
+async function refillDiscoverSourceDeck(
   req: Request,
   res: Response,
   next: (error: SpinderServerError) => void
 ) {
   const userId: string = req.cookies.userId || null;
   const accessToken: string = req.cookies.spinder_spotify_access_token || "";
-  const source = req.query.source || null;
   try {
-    if (!source) throw new Error("Invalid source."); //Replace with more sophisticated validation.
-    const selectedSource: DiscoverSource = safeParseJson(source as string); //as sring should no longer be needed if source is properly validated.
+    const selectedSource = (await getSpinderUserData(userId))
+      .selectedDiscoverSource;
     refillSourceDeck(userId, accessToken, selectedSource); //Dispatches and responds immediately. The frontend listens to the source deck filling up.
     okResponse(req, res, selectedSource);
   } catch (error) {
@@ -295,20 +276,18 @@ async function refreshSourceDeck(
   }
 }
 
-async function refreshDestinationDeck(
+async function resetDiscoverDestinationDeck(
   req: Request,
   res: Response,
   next: (error: SpinderServerError) => void
 ) {
   const userId: string = req.cookies.userId || null;
   const accessToken: string = req.cookies.spinder_spotify_access_token || "";
-  const destination = req.query.destination || null;
+
   try {
-    if (!destination) throw new Error("Invalid destination."); //Replace with more sophisticated validation.
-    const selectedDestination: DiscoverDestination = safeParseJson(
-      destination as string
-    ); //as sring should no longer be needed if destination is properly validated.
-    enumerateDestinationDeck(userId, accessToken, selectedDestination); //Dispatches and responds immediately. The frontend listens to the source deck filling up.
+    const selectedDestination = (await getSpinderUserData(userId))
+      .selectedDiscoverDestination;
+    resetDestinationDeck(userId, accessToken, selectedDestination); //Dispatches and responds immediately. The frontend listens to the source deck filling up.
     okResponse(req, res, selectedDestination);
   } catch (error) {
     console.error(error);
@@ -330,14 +309,11 @@ async function saveDeckItemToDestination(
 ) {
   const userId: string = req.cookies.userId || null;
   const accessToken: string = req.cookies.spinder_spotify_access_token || "";
-  const destination = req.query.destination || null;
   const item = req.query.item || null;
   try {
-    if (!destination || !item) throw new Error("Invalid destination or item."); //Replace with more sophisticated validation.
-    const selectedDestination: DiscoverDestination = safeParseJson(
-      destination as string
-    ); //as sring should no longer be needed if destination is properly validated.
     const deckItem: DeckItem = safeParseJson(item as string);
+    const selectedDestination = (await getSpinderUserData(userId))
+      .selectedDiscoverDestination;
     if (selectedDestination.isFavourites) {
       addTracksToSpotifyUserSavedItems(accessToken, [deckItem.trackId]); //We may want to consider awaiting these for better response accuracy.
     } else {
@@ -345,7 +321,7 @@ async function saveDeckItemToDestination(
         deckItem.trackUri,
       ]);
     }
-    setFirestoreDoc(`users/${userId}/destinationDeck/${deckItem.trackId}`, {}); //Completely cosmetic. The frontend uses predictive logic for the like feature and refreshes on page reload which renders this essentially pointless.
+    setFirestoreDoc(`users/${userId}/destinationDeck/${deckItem.trackId}`, {});
     okResponse(req, res, "saved");
   } catch (error) {
     console.error(error);
@@ -403,8 +379,8 @@ export {
   setDiscoverSource,
   getDiscoverDestinations,
   setDiscoverDestination,
-  refreshSourceDeck,
-  refreshDestinationDeck,
+  refillDiscoverSourceDeck,
+  resetDiscoverDestinationDeck,
   saveDeckItemToDestination,
   removeDeckItemFromDestination,
 };

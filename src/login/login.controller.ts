@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import { Request, Response } from "express";
 import { createFirebaseCustomToken } from "../firebase/firebase.spinder.js";
 import { updateOrCreateSpinderUserData } from "../user/user.utils.js";
-import { FinalizeLoginData, SilentLoginData } from "./login.model.js";
+import { FinalizeLoginData } from "./login.model.js";
 import {
   SpinderServerError,
   fiveMinutesInMillis,
@@ -21,6 +21,10 @@ import {
 } from "../spotify/spotify.api.js";
 import { SpotifyUserProfileData } from "../spotify/spotify.model.js";
 import { spotifyTokenToAuthToken } from "../auth/auth.utils.js";
+import {
+  resetDestinationDeck,
+  refillSourceDeck,
+} from "../services/deck.service.js";
 
 //TODO: Purge this Map of stale entries at intervals.
 const spotifyLoginStates: Map<string, string> = new Map(); //This map associates 5 minute cookies to Spotify login state. When a login callback is received, the callback req MUST have a cookie that exists in this map and the content MUST be the corresponding state.
@@ -119,7 +123,7 @@ async function finalizeLogin(
   const accessToken: string = req.cookies.spinder_spotify_access_token || null;
   var userProfile: SpotifyUserProfileData | null = null;
 
-  //If login has been previously finalized, the custom token will still be available and we can login silently (quicker).
+  //If login was previously finalized less than an hour ago, the custom token will still be available and we can login silently (quicker).
   const customToken: string = req.cookies.spinder_firebase_custom_token || null;
 
   //Silent login.
@@ -164,14 +168,29 @@ async function finalizeLogin(
     const finalizeLoginData: FinalizeLoginData = {
       firebaseCustomToken: await createFirebaseCustomToken(userProfile.id),
     };
+    //We ensure that the user has their user data on every fresh login
     const refreshToken = req.cookies.spinder_spotify_refresh_token || null;
-    await updateOrCreateSpinderUserData(
+    const [userData, isNewUser] = await updateOrCreateSpinderUserData(
       userProfile.id,
       userProfile.display_name,
       userProfile.images.length > 0 ? userProfile.images[0].url : "",
       accessToken,
       refreshToken
     );
+    //We carry out these deck initilaization tasks for a new user
+    if (isNewUser) {
+      refillSourceDeck(
+        userProfile.id,
+        accessToken,
+        userData.selectedDiscoverSource
+      );
+      resetDestinationDeck(
+        userProfile.id,
+        accessToken,
+        userData.selectedDiscoverDestination
+      );
+    }
+    //End of initialization tasks
     res.cookie(
       "spinder_firebase_custom_token",
       finalizeLoginData.firebaseCustomToken,
