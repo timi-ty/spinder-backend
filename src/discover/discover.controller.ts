@@ -187,19 +187,17 @@ async function searchDiscoverSources(
     const q = req.query.q || "";
     const accessToken: string = req.cookies.spinder_spotify_access_token || "";
 
-    const spotifySearchResult = searchSpotify(accessToken, q as string);
-    const artistSources = (await spotifySearchResult).artists.items.map(
-      (artist) => {
-        const artistSource: DiscoverSource = {
-          type: "Artist",
-          id: artist.id,
-          name: artist.name,
-          image: artist.images.length > 0 ? artist.images[0].url : "",
-        };
-        return artistSource;
-      }
-    );
-    const playlistSources = (await spotifySearchResult).playlists.items.map(
+    const spotifySearchResult = await searchSpotify(accessToken, q as string);
+    const artistSources = spotifySearchResult.artists.items.map((artist) => {
+      const artistSource: DiscoverSource = {
+        type: "Artist",
+        id: artist.id,
+        name: artist.name,
+        image: artist.images.length > 0 ? artist.images[0].url : "",
+      };
+      return artistSource;
+    });
+    const playlistSources = spotifySearchResult.playlists.items.map(
       (playlist) => {
         const playlistSource: DiscoverSource = {
           type: "Playlist",
@@ -223,8 +221,10 @@ async function searchDiscoverSources(
       return spinderPersonSource;
     });
     const searchResult: DiscoverSourceSearchResult = {
-      artists: artistSources,
-      playlists: playlistSources,
+      searchText: q as string,
+      foundVibe: playlistSources.length > 0, //We may want to check for an actual number of available tracks
+      artists: artistSources, //We may want to filter artists to use only artists with a minimum discography size
+      playlists: playlistSources, //We may want to filter playlists to use only playlists with a minimum track count
       spinderPeople: spinderPeopleSources,
     };
     okResponse(req, res, searchResult);

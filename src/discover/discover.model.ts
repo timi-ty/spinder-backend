@@ -36,6 +36,8 @@ interface DiscoverSourceData {
 }
 
 interface DiscoverSourceSearchResult {
+  searchText: string;
+  foundVibe: boolean;
   artists: DiscoverSource[];
   playlists: DiscoverSource[];
   spinderPeople: DiscoverSource[];
