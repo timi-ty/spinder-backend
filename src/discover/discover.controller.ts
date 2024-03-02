@@ -109,8 +109,8 @@ async function setDiscoverDestination(
   }
 }
 
-//Get the list of currently allowed discover source types from the Spinder App Database. The user's source type selection should be marked in the response.
-async function getDiscoverSourceTypes(
+//Get the selected source and all the currently allowed composite sources. Other sources can be searched for.
+async function getDiscoverSources(
   req: Request,
   res: Response,
   next: (error: SpinderServerError) => void
@@ -374,7 +374,7 @@ async function removeDeckItemFromDestination(
 }
 
 export {
-  getDiscoverSourceTypes,
+  getDiscoverSources,
   searchDiscoverSources,
   setDiscoverSource,
   getDiscoverDestinations,

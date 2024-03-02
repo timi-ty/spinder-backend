@@ -5,7 +5,7 @@ import {
 } from "./discover.middleware.js";
 import {
   getDiscoverDestinations,
-  getDiscoverSourceTypes,
+  getDiscoverSources,
   refillDiscoverSourceDeck,
   removeDeckItemFromDestination,
   resetDiscoverDestinationDeck,
@@ -31,7 +31,7 @@ function assembleDiscoverRouter(router: Router) {
   discoverRouter.use(ensureSpotifyAccessToken(false));
   discoverRouter.use(ensureFirebaseAuthenticatedUser);
 
-  discoverRouter.get("/sources", getDiscoverSourceTypes);
+  discoverRouter.get("/sources", getDiscoverSources);
 
   discoverRouter.post("/source", setDiscoverSource);
 
