@@ -219,10 +219,10 @@ async function getVibeTracks(accessToken: string, vibe: string) {
   //Try to get the top 4 playlist and 1 random playlist.
   for (var i = 0; i < 5; i++) {
     if (i >= playlistResults.length) break;
-    if (i == 4) {
-      //Don't include any playlist we already added.
-      const randomIndex =
-        4 + Math.random() * Math.max(playlistResults.length - 5, 0);
+    if (i === 4) {
+      //Don't include any playlist we already added. Random index should never be less than 4.
+      var randomIndex = Math.round(Math.random() * playlistResults.length - 1);
+      randomIndex = Math.max(randomIndex, 4);
       if (randomIndex >= playlistResults.length) break;
       vibePlaylists.push(playlistResults[randomIndex]);
     } else {
@@ -232,8 +232,8 @@ async function getVibeTracks(accessToken: string, vibe: string) {
 
   const vibePlaylistsracks: SpotifyTrack[] = [];
 
-  for (var i = 0; i < vibePlaylists.length; i++) {
-    const playlist = vibePlaylists[i];
+  for (var j = 0; j < vibePlaylists.length; j++) {
+    const playlist = vibePlaylists[j];
     const playlistTracks = await getSpotifyUserPlaylistTracks(
       accessToken,
       playlist.id,
@@ -272,12 +272,12 @@ async function completeDeckData(
   const completeTracksData: DeckItem[] = mapAndFilter(
     originalTracksData,
     (track) => {
-      const mainArtistId =
-        track.artists.length > 0
-          ? track.artists[0].id
-          : "0TnOYISbd1XYRBk9myaseg";
-      const mainArtistDetails = artistDetailsMap.get(mainArtistId);
       try {
+        const mainArtistId =
+          track.artists.length > 0
+            ? track.artists[0].id
+            : "0TnOYISbd1XYRBk9myaseg";
+        const mainArtistDetails = artistDetailsMap.get(mainArtistId);
         if (!mainArtistDetails) return null;
         const relatedSources: DiscoverSource[] = [];
         track.artists.forEach((artist) => {
