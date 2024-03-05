@@ -65,6 +65,11 @@ interface DiscoverDestinationData {
   availableDestinations: DiscoverDestination[];
 }
 
+interface DiscoverDestinationSearchResult {
+  searchText: string;
+  playlists: DiscoverDestination[];
+}
+
 export {
   DiscoverSource,
   defaultDiscoverSource,
@@ -73,4 +78,5 @@ export {
   DiscoverDestination,
   defaultDiscoverDestination,
   DiscoverDestinationData,
+  DiscoverDestinationSearchResult,
 };

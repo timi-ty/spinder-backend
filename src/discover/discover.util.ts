@@ -73,4 +73,7 @@ function filterOwnedSpotifyPlaylistsToDiscoverDestinations(
   return userOwnedPlaylists;
 }
 
-export { getCountOrAllOwnedSpotifyPlaylistsAsDiscoverDestinations };
+export {
+  getCountOrAllOwnedSpotifyPlaylistsAsDiscoverDestinations,
+  filterOwnedSpotifyPlaylistsToDiscoverDestinations,
+};

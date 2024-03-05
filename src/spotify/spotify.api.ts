@@ -388,10 +388,13 @@ async function removeTracksFromSpotifyUserSavedItems(
 
 async function searchSpotify(
   accessToken: string,
-  q: string
+  q: string,
+  playlistOnly: boolean
 ): Promise<SpotifySearchResult> {
   spotifyLogger.debug(`Searching spotify for:: ${q}`);
-  const url = `https://api.spotify.com/v1/search?q=${q}&type=artist,playlist`;
+  const url = `https://api.spotify.com/v1/search?q=${q}&type=${
+    playlistOnly ? "" : "artist,"
+  }playlist`;
 
   const response = await fetch(url, {
     headers: {

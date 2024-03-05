@@ -211,7 +211,7 @@ async function getPlaylistTracks(
 }
 
 async function getVibeTracks(accessToken: string, vibe: string) {
-  const spotifySearchResult = await searchSpotify(accessToken, vibe);
+  const spotifySearchResult = await searchSpotify(accessToken, vibe, true);
 
   const playlistResults = spotifySearchResult.playlists.items;
   const vibePlaylists = [];

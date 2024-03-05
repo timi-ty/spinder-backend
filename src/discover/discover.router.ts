@@ -10,6 +10,7 @@ import {
   removeDeckItemFromDestination,
   resetDiscoverDestinationDeck,
   saveDeckItemToDestination,
+  searchDiscoverDestinations,
   searchDiscoverSources,
   setDiscoverDestination,
   setDiscoverSource,
@@ -40,6 +41,8 @@ function assembleDiscoverRouter(router: Router) {
   discoverRouter.get("/destinations", getDiscoverDestinations);
 
   discoverRouter.post("/destination", setDiscoverDestination);
+
+  discoverRouter.get("/destinations/search", searchDiscoverDestinations);
 
   discoverRouter.get("/deck/source/refill", refillDiscoverSourceDeck);
 

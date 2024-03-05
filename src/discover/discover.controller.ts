@@ -6,13 +6,17 @@ import {
 } from "../utils/utils.js";
 import {
   DiscoverDestination,
+  DiscoverDestinationSearchResult,
   DiscoverSource,
   DiscoverSourceData,
   DiscoverSourceSearchResult,
 } from "./discover.model.js";
 import { HttpStatusCode } from "axios";
 import { getSpinderUserData } from "../user/user.utils.js";
-import { getCountOrAllOwnedSpotifyPlaylistsAsDiscoverDestinations } from "./discover.util.js";
+import {
+  filterOwnedSpotifyPlaylistsToDiscoverDestinations,
+  getCountOrAllOwnedSpotifyPlaylistsAsDiscoverDestinations,
+} from "./discover.util.js";
 import {
   clearFirestoreCollection,
   deleteFirestoreDoc,
@@ -170,7 +174,11 @@ async function searchDiscoverSources(
     const q = req.query.q || "";
     const accessToken: string = req.cookies.spinder_spotify_access_token || "";
 
-    const spotifySearchResult = await searchSpotify(accessToken, q as string);
+    const spotifySearchResult = await searchSpotify(
+      accessToken,
+      q as string,
+      false
+    );
     const artistSources = spotifySearchResult.artists.items.map((artist) => {
       const artistSource: DiscoverSource = {
         type: "Artist",
@@ -209,6 +217,42 @@ async function searchDiscoverSources(
       artists: artistSources, //We may want to filter artists to use only artists with a minimum discography size
       playlists: playlistSources, //We may want to filter playlists to use only playlists with a minimum track count
       spinderPeople: spinderPeopleSources,
+    };
+    okResponse(req, res, searchResult);
+  } catch (error) {
+    console.error(error);
+    next(
+      new SpinderServerError(
+        HttpStatusCode.InternalServerError,
+        new Error("Failed to search.")
+      )
+    );
+  }
+}
+
+async function searchDiscoverDestinations(
+  req: Request,
+  res: Response,
+  next: (error: SpinderServerError) => void
+) {
+  try {
+    const q = req.query.q || "";
+    const accessToken: string = req.cookies.spinder_spotify_access_token || "";
+    const userId: string = req.cookies.userId || null;
+
+    const spotifySearchResult = await searchSpotify(
+      accessToken,
+      q as string,
+      false
+    );
+    const playlistDestinations =
+      filterOwnedSpotifyPlaylistsToDiscoverDestinations(
+        spotifySearchResult.playlists,
+        userId
+      );
+    const searchResult: DiscoverDestinationSearchResult = {
+      searchText: q as string,
+      playlists: playlistDestinations,
     };
     okResponse(req, res, searchResult);
   } catch (error) {
@@ -377,6 +421,7 @@ export {
   searchDiscoverSources,
   setDiscoverSource,
   getDiscoverDestinations,
+  searchDiscoverDestinations,
   setDiscoverDestination,
   refillDiscoverSourceDeck,
   resetDiscoverDestinationDeck,
