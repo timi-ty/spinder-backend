@@ -212,15 +212,28 @@ async function getPlaylistTracks(
 
 async function getVibeTracks(accessToken: string, vibe: string) {
   const spotifySearchResult = await searchSpotify(accessToken, vibe);
-  //Select up to 5 random playlists from our playlists to get tracks from.
-  const randomPlaylists = getRandomItems(
-    spotifySearchResult.playlists.items,
-    5
-  ); //TODO: Find a way to always add the first playlist result only once.
+
+  const playlistResults = spotifySearchResult.playlists.items;
+  const vibePlaylists = [];
+
+  //Try to get the top 4 playlist and 1 random playlist.
+  for (var i = 0; i < 5; i++) {
+    if (i >= playlistResults.length) break;
+    if (i == 4) {
+      //Don't include any playlist we already added.
+      const randomIndex =
+        4 + Math.random() * Math.max(playlistResults.length - 5, 0);
+      if (randomIndex >= playlistResults.length) break;
+      vibePlaylists.push(playlistResults[randomIndex]);
+    } else {
+      vibePlaylists.push(playlistResults[i]);
+    }
+  }
+
   const vibePlaylistsracks: SpotifyTrack[] = [];
 
-  for (var i = 0; i < randomPlaylists.length; i++) {
-    const playlist = randomPlaylists[i];
+  for (var i = 0; i < vibePlaylists.length; i++) {
+    const playlist = vibePlaylists[i];
     const playlistTracks = await getSpotifyUserPlaylistTracks(
       accessToken,
       playlist.id,
