@@ -48,6 +48,24 @@ function getRandomItems<T>(list: T[], count: number): T[] {
   return shuffled.slice(0, Math.min(count, list.length));
 }
 
+//Automatically filters out null or undefined elements regardless of the filter function
+function mapAndFilter<T, U>(
+  array: T[],
+  transformFunction: (original: T) => U | null,
+  filterFunction: (transformed: U | null) => boolean
+) {
+  const emptyResult: U[] = [];
+  return array.reduce((result, element) => {
+    const transformedElement = transformFunction(element);
+
+    if (filterFunction(transformedElement) && transformedElement) {
+      result.push(transformedElement);
+    }
+
+    return result;
+  }, emptyResult);
+}
+
 function safeParseJson(jsonString: string) {
   return JSON.parse(jsonString, (key, value) => {
     if (typeof value === "string") {
@@ -70,4 +88,5 @@ export {
   okRedirect,
   getRandomItems,
   safeParseJson,
+  mapAndFilter,
 };

@@ -11,10 +11,13 @@ import {
   refreshSpotifyAccessToken,
   searchSpotify,
 } from "../spotify/spotify.api.js";
-import { SpotifyTrack } from "../spotify/spotify.model.js";
+import {
+  SpotifyArtistDetails,
+  SpotifyTrack,
+} from "../spotify/spotify.model.js";
 import { SpinderUserData } from "../user/user.model.js";
 import { getSpinderUserData } from "../user/user.utils.js";
-import { getRandomItems } from "../utils/utils.js";
+import { getRandomItems, mapAndFilter } from "../utils/utils.js";
 import { DeckItem, DeckItemArtist } from "./deck.model.js";
 import { isUserOnline } from "./deck.service.js";
 
@@ -85,66 +88,8 @@ async function getAnythingMeTracks(
   );
   //Shuffling is pointless here because firestore by default orders data by id. If we want shuffling, it has to be implemented there.
   const anythingMeTracks = [...topTracks.items, ...recommendationTracks.tracks];
-  const artistIds = anythingMeTracks.map((track) =>
-    track.artists.length > 0 ? track.artists[0].id : "0TnOYISbd1XYRBk9myaseg"
-  );
-  const artistsDetails = (
-    await getSpotifySeveralArtists(accessToken, artistIds)
-  ).artists;
 
-  const anythingMeDeckTracks: DeckItem[] = anythingMeTracks.map(
-    (track, index) => {
-      const relatedSources: DiscoverSource[] = [];
-      track.artists.forEach((artist) => {
-        const artistSource: DiscoverSource = {
-          type: "Artist",
-          id: artist.id,
-          name: artist.name,
-          image:
-            artistsDetails[index].images.length > 0
-              ? artistsDetails[index].images[0].url
-              : "",
-        };
-        relatedSources.push(artistSource);
-      });
-
-      artistsDetails[index].genres.forEach((genre) => {
-        const vibeSource: DiscoverSource = {
-          type: "Vibe",
-          id: genre,
-          name: genre,
-          image:
-            artistsDetails[index].images.length > 0
-              ? artistsDetails[index].images[0].url
-              : "",
-        };
-        relatedSources.push(vibeSource);
-      });
-
-      const artists = track.artists.map((artist) => {
-        const deckArtist: DeckItemArtist = {
-          artistName: artist.name,
-          artistUri: artist.uri,
-          artistImage:
-            artistsDetails[index].images.length > 0
-              ? artistsDetails[index].images[0].url
-              : "",
-        };
-        return deckArtist;
-      });
-
-      return {
-        trackId: track.id,
-        image: track.album.images.length > 0 ? track.album.images[0].url : "",
-        previewUrl: track.preview_url,
-        trackName: track.name,
-        trackUri: track.uri,
-        artists: artists,
-        relatedSources: relatedSources,
-      };
-    }
-  );
-  return anythingMeDeckTracks;
+  return completeDeckData(anythingMeTracks, accessToken);
 }
 
 async function getSpinderPeopleTracks() {
@@ -182,68 +127,9 @@ async function getMyArtistsTracks(
     randomArtists.map((artist) => artist.id),
     count
   );
-  //Shuffling is pointless here because firestore by default orders data by id. If we want shuffling, it has to be implemented there.
   const followedArtistsTracks = recommendationTracks.tracks;
-  const artistIds = followedArtistsTracks.map((track) =>
-    track.artists.length > 0 ? track.artists[0].id : "0TnOYISbd1XYRBk9myaseg"
-  );
-  const artistsDetails = (
-    await getSpotifySeveralArtists(accessToken, artistIds)
-  ).artists;
 
-  const followedArtistsDeckTracks: DeckItem[] = followedArtistsTracks.map(
-    (track, index) => {
-      const relatedSources: DiscoverSource[] = [];
-      track.artists.forEach((artist) => {
-        const artistSource: DiscoverSource = {
-          type: "Artist",
-          id: artist.id,
-          name: artist.name,
-          image:
-            artistsDetails[index].images.length > 0
-              ? artistsDetails[index].images[0].url
-              : "",
-        };
-        relatedSources.push(artistSource);
-      });
-
-      artistsDetails[index].genres.forEach((genre) => {
-        const vibeSource: DiscoverSource = {
-          type: "Vibe",
-          id: genre,
-          name: genre,
-          image:
-            artistsDetails[index].images.length > 0
-              ? artistsDetails[index].images[0].url
-              : "",
-        };
-        relatedSources.push(vibeSource);
-      });
-
-      const artists = track.artists.map((artist) => {
-        const deckArtist: DeckItemArtist = {
-          artistName: artist.name,
-          artistUri: artist.uri,
-          artistImage:
-            artistsDetails[index].images.length > 0
-              ? artistsDetails[index].images[0].url
-              : "",
-        };
-        return deckArtist;
-      });
-
-      return {
-        trackId: track.id,
-        image: track.album.images.length > 0 ? track.album.images[0].url : "",
-        previewUrl: track.preview_url,
-        trackName: track.name,
-        trackUri: track.uri,
-        artists: artists,
-        relatedSources: relatedSources,
-      };
-    }
-  );
-  return followedArtistsDeckTracks;
+  return completeDeckData(followedArtistsTracks, accessToken);
 }
 
 async function getMyPlaylistsTracks(
@@ -275,66 +161,7 @@ async function getMyPlaylistsTracks(
     myPlaylistsracks.push(...playlistTracks.items.map((item) => item.track));
   }
 
-  const artistIds = myPlaylistsracks.map((track) =>
-    track.artists.length > 0 ? track.artists[0].id : "0TnOYISbd1XYRBk9myaseg"
-  );
-  const artistsDetails = (
-    await getSpotifySeveralArtists(accessToken, artistIds)
-  ).artists;
-
-  const myPlaylistsDeckTracks: DeckItem[] = myPlaylistsracks.map(
-    (track, index) => {
-      const relatedSources: DiscoverSource[] = [];
-      track.artists.forEach((artist) => {
-        const artistSource: DiscoverSource = {
-          type: "Artist",
-          id: artist.id,
-          name: artist.name,
-          image:
-            artistsDetails[index].images.length > 0
-              ? artistsDetails[index].images[0].url
-              : "",
-        };
-        relatedSources.push(artistSource);
-      });
-
-      artistsDetails[index].genres.forEach((genre) => {
-        const vibeSource: DiscoverSource = {
-          type: "Vibe",
-          id: genre,
-          name: genre,
-          image:
-            artistsDetails[index].images.length > 0
-              ? artistsDetails[index].images[0].url
-              : "",
-        };
-        relatedSources.push(vibeSource);
-      });
-
-      const artists = track.artists.map((artist) => {
-        const deckArtist: DeckItemArtist = {
-          artistName: artist.name,
-          artistUri: artist.uri,
-          artistImage:
-            artistsDetails[index].images.length > 0
-              ? artistsDetails[index].images[0].url
-              : "",
-        };
-        return deckArtist;
-      });
-
-      return {
-        trackId: track.id,
-        image: track.album.images.length > 0 ? track.album.images[0].url : "",
-        previewUrl: track.preview_url,
-        trackName: track.name,
-        trackUri: track.uri,
-        artists: artists,
-        relatedSources: relatedSources,
-      };
-    }
-  );
-  return myPlaylistsDeckTracks;
+  return completeDeckData(myPlaylistsracks, accessToken);
 }
 
 async function getSpinderPersonTracks(spinderPersonId: string) {
@@ -362,66 +189,9 @@ async function getArtistTracks(
     [artistId],
     count
   );
-  //Shuffling is pointless here because firestore by default orders data by id. If we want shuffling, it has to be implemented there.
   const artistTracks = recommendationTracks.tracks;
-  const artistIds = artistTracks.map((track) =>
-    track.artists.length > 0 ? track.artists[0].id : "0TnOYISbd1XYRBk9myaseg"
-  );
-  const artistsDetails = (
-    await getSpotifySeveralArtists(accessToken, artistIds)
-  ).artists;
 
-  const artistDeckTracks: DeckItem[] = artistTracks.map((track, index) => {
-    const relatedSources: DiscoverSource[] = [];
-    track.artists.forEach((artist) => {
-      const artistSource: DiscoverSource = {
-        type: "Artist",
-        id: artist.id,
-        name: artist.name,
-        image:
-          artistsDetails[index].images.length > 0
-            ? artistsDetails[index].images[0].url
-            : "",
-      };
-      relatedSources.push(artistSource);
-    });
-
-    artistsDetails[index].genres.forEach((genre) => {
-      const vibeSource: DiscoverSource = {
-        type: "Vibe",
-        id: genre,
-        name: genre,
-        image:
-          artistsDetails[index].images.length > 0
-            ? artistsDetails[index].images[0].url
-            : "",
-      };
-      relatedSources.push(vibeSource);
-    });
-
-    const artists = track.artists.map((artist) => {
-      const deckArtist: DeckItemArtist = {
-        artistName: artist.name,
-        artistUri: artist.uri,
-        artistImage:
-          artistsDetails[index].images.length > 0
-            ? artistsDetails[index].images[0].url
-            : "",
-      };
-      return deckArtist;
-    });
-
-    return {
-      trackId: track.id,
-      image: track.album.images.length > 0 ? track.album.images[0].url : "",
-      previewUrl: track.preview_url,
-      trackName: track.name,
-      trackUri: track.uri,
-      artists: artists,
-      relatedSources: relatedSources,
-    };
-  });
-  return artistDeckTracks;
+  return completeDeckData(artistTracks, accessToken);
 }
 
 async function getPlaylistTracks(
@@ -437,64 +207,7 @@ async function getPlaylistTracks(
   ); //TODO: Get a random set of count tracks from the playlist instead of just the first count.
   const playlistTracks = playlistTrackItems.items.map((item) => item.track);
 
-  const artistIds = playlistTracks.map((track) =>
-    track.artists.length > 0 ? track.artists[0].id : "0TnOYISbd1XYRBk9myaseg"
-  );
-  const artistsDetails = (
-    await getSpotifySeveralArtists(accessToken, artistIds)
-  ).artists;
-
-  const playlistDeckTracks: DeckItem[] = playlistTracks.map((track, index) => {
-    const relatedSources: DiscoverSource[] = [];
-    track.artists.forEach((artist) => {
-      const artistSource: DiscoverSource = {
-        type: "Artist",
-        id: artist.id,
-        name: artist.name,
-        image:
-          artistsDetails[index].images.length > 0
-            ? artistsDetails[index].images[0].url
-            : "",
-      };
-      relatedSources.push(artistSource);
-    });
-
-    artistsDetails[index].genres.forEach((genre) => {
-      const vibeSource: DiscoverSource = {
-        type: "Vibe",
-        id: genre,
-        name: genre,
-        image:
-          artistsDetails[index].images.length > 0
-            ? artistsDetails[index].images[0].url
-            : "",
-      };
-      relatedSources.push(vibeSource);
-    });
-
-    const artists = track.artists.map((artist) => {
-      const deckArtist: DeckItemArtist = {
-        artistName: artist.name,
-        artistUri: artist.uri,
-        artistImage:
-          artistsDetails[index].images.length > 0
-            ? artistsDetails[index].images[0].url
-            : "",
-      };
-      return deckArtist;
-    });
-
-    return {
-      trackId: track.id,
-      image: track.album.images.length > 0 ? track.album.images[0].url : "",
-      previewUrl: track.preview_url,
-      trackName: track.name,
-      trackUri: track.uri,
-      artists: artists,
-      relatedSources: relatedSources,
-    };
-  });
-  return playlistDeckTracks;
+  return completeDeckData(playlistTracks, accessToken);
 }
 
 async function getVibeTracks(accessToken: string, vibe: string) {
@@ -517,66 +230,101 @@ async function getVibeTracks(accessToken: string, vibe: string) {
     vibePlaylistsracks.push(...playlistTracks.items.map((item) => item.track));
   }
 
-  const artistIds = vibePlaylistsracks.map((track) =>
-    track.artists.length > 0 ? track.artists[0].id : "0TnOYISbd1XYRBk9myaseg"
-  );
-  const artistsDetails = (
-    await getSpotifySeveralArtists(accessToken, artistIds)
-  ).artists;
+  return completeDeckData(vibePlaylistsracks, accessToken);
+}
 
-  const vibePlaylistsDeckTracks: DeckItem[] = vibePlaylistsracks.map(
-    (track, index) => {
-      const relatedSources: DiscoverSource[] = [];
-      track.artists.forEach((artist) => {
-        const artistSource: DiscoverSource = {
-          type: "Artist",
-          id: artist.id,
-          name: artist.name,
-          image:
-            artistsDetails[index].images.length > 0
-              ? artistsDetails[index].images[0].url
-              : "",
-        };
-        relatedSources.push(artistSource);
-      });
+async function completeDeckData(
+  originalTracksData: SpotifyTrack[],
+  accessToken: string
+): Promise<DeckItem[]> {
+  //We use try catch blocks here to reduce the chances of a filler failing. If there's a problem, just move to the next track.
+  const artistIds = originalTracksData.map((track) => {
+    try {
+      return track.artists.length > 0
+        ? track.artists[0].id
+        : "0TnOYISbd1XYRBk9myaseg";
+    } catch (error) {
+      console.error(error);
+      return "0TnOYISbd1XYRBk9myaseg"; //Should ideally be an an id that represents default data for an unknown artist.
+    }
+  });
 
-      artistsDetails[index].genres.forEach((genre) => {
-        const vibeSource: DiscoverSource = {
-          type: "Vibe",
-          id: genre,
-          name: genre,
-          image:
-            artistsDetails[index].images.length > 0
-              ? artistsDetails[index].images[0].url
-              : "",
-        };
-        relatedSources.push(vibeSource);
-      });
-
-      const artists = track.artists.map((artist) => {
-        const deckArtist: DeckItemArtist = {
-          artistName: artist.name,
-          artistUri: artist.uri,
-          artistImage:
-            artistsDetails[index].images.length > 0
-              ? artistsDetails[index].images[0].url
-              : "",
-        };
-        return deckArtist;
-      });
-
-      return {
-        trackId: track.id,
-        image: track.album.images.length > 0 ? track.album.images[0].url : "",
-        previewUrl: track.preview_url,
-        trackName: track.name,
-        trackUri: track.uri,
-        artists: artists,
-        relatedSources: relatedSources,
-      };
+  const artistDetailsMap: Map<string, SpotifyArtistDetails> = new Map();
+  (await getSpotifySeveralArtists(accessToken, artistIds)).artists.forEach(
+    (artist) => {
+      artistDetailsMap.set(artist.id, artist);
     }
   );
-  return vibePlaylistsDeckTracks;
+
+  const completeTracksData: DeckItem[] = mapAndFilter(
+    originalTracksData,
+    (track) => {
+      const mainArtistId =
+        track.artists.length > 0
+          ? track.artists[0].id
+          : "0TnOYISbd1XYRBk9myaseg";
+      const mainArtistDetails = artistDetailsMap.get(mainArtistId);
+      try {
+        if (!mainArtistDetails) return null;
+        const relatedSources: DiscoverSource[] = [];
+        track.artists.forEach((artist) => {
+          const artistSource: DiscoverSource = {
+            type: "Artist",
+            id: artist.id,
+            name: artist.name,
+            image:
+              mainArtistDetails.images.length > 0
+                ? mainArtistDetails.images[0].url
+                : "",
+          };
+          relatedSources.push(artistSource);
+        });
+        mainArtistDetails.genres.forEach((genre) => {
+          const vibeSource: DiscoverSource = {
+            type: "Vibe",
+            id: genre,
+            name: genre,
+            image:
+              mainArtistDetails.images.length > 0
+                ? mainArtistDetails.images[0].url
+                : "",
+          };
+          relatedSources.push(vibeSource);
+        });
+
+        const artists = track.artists.map((artist) => {
+          const deckArtist: DeckItemArtist = {
+            artistName: artist.name,
+            artistUri: artist.uri,
+            artistImage:
+              mainArtistDetails.images.length > 0
+                ? mainArtistDetails.images[0].url //We don't try to get the images of featured artists
+                : "",
+          };
+          return deckArtist;
+        });
+
+        return {
+          trackId: track.id,
+          image: track.album.images.length > 0 ? track.album.images[0].url : "",
+          previewUrl: track.preview_url,
+          trackName: track.name,
+          trackUri: track.uri,
+          artists: artists,
+          relatedSources: relatedSources,
+        };
+      } catch {
+        return null;
+      }
+    },
+    (deckItem) =>
+      deckItem !== null &&
+      deckItem !== undefined &&
+      deckItem.previewUrl !== null &&
+      deckItem.previewUrl !== undefined
+  );
+
+  return completeTracksData;
 }
 
 export { getDeckTracks };
