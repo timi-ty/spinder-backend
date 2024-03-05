@@ -311,6 +311,7 @@ async function saveDeckItemToDestination(
   const accessToken: string = req.cookies.spinder_spotify_access_token || "";
   const item = req.query.item || null;
   try {
+    if (!item) throw new Error("Invalid item."); //Replace with more sophisticated validation.
     const deckItem: DeckItem = safeParseJson(item as string);
     const selectedDestination = (await getSpinderUserData(userId))
       .selectedDiscoverDestination;
@@ -343,13 +344,11 @@ async function removeDeckItemFromDestination(
 ) {
   const userId: string = req.cookies.userId || null;
   const accessToken: string = req.cookies.spinder_spotify_access_token || "";
-  const destination = req.query.destination || null;
   const item = req.query.item || null;
   try {
-    if (!destination || !item) throw new Error("Invalid destination or item."); //Replace with more sophisticated validation.
-    const selectedDestination: DiscoverDestination = safeParseJson(
-      destination as string
-    ); //as sring should no longer be needed if destination is properly validated.
+    if (!item) throw new Error("Invalid item."); //Replace with more sophisticated validation.
+    const selectedDestination = (await getSpinderUserData(userId))
+      .selectedDiscoverDestination;
     const deckItem: DeckItem = safeParseJson(item as string);
     if (selectedDestination.isFavourites) {
       removeTracksFromSpotifyUserSavedItems(accessToken, [deckItem.trackId]); //We may want to consider awaiting these for better response accuracy.
@@ -358,7 +357,7 @@ async function removeDeckItemFromDestination(
         deckItem.trackUri,
       ]);
     }
-    deleteFirestoreDoc(`users/${userId}/destinationDeck/${deckItem.trackId}`); //Completely cosmetic. The frontend uses predictive logic for the like feature and refreshes on page reload which renders this essentially pointless.
+    deleteFirestoreDoc(`users/${userId}/destinationDeck/${deckItem.trackId}`);
     okResponse(req, res, "removed");
   } catch (error) {
     console.error(error);
@@ -366,7 +365,7 @@ async function removeDeckItemFromDestination(
       new SpinderServerError(
         HttpStatusCode.InternalServerError,
         new Error(
-          "Failed to unsave item. This is most likely a Spotify call failure."
+          "Failed to remove item. This is most likely a Spotify call failure."
         )
       )
     );
