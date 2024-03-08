@@ -63,7 +63,7 @@ async function getDiscoverDestinations(
     //Add favourites as the first destination
     const destinationFavourites: DiscoverDestination = {
       name: "Favourites",
-      image: "src/assets/ic_favourites_heart.svg", //TODO: look into hosting app level images on firebase storage
+      image: "/resources/ic_favourites_heart.svg", //TODO: look into hosting app level images on firebase storage
       id: "favourites",
       isFavourites: true,
     };

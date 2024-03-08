@@ -279,7 +279,7 @@ function attachPresenceWatcher(
         snapshot.key
       }, with status: ${JSON.stringify(newUserStatus)}`
     );
-    onPresenceChanged(snapshot.key ?? "", newUserStatus.state === "online");
+    onPresenceChanged(snapshot.key || "", newUserStatus.state === "online");
   });
   statusDatabaseRef.on("child_changed", (snapshot) => {
     const newUserStatus: PresenceStatus = snapshot.val();
@@ -288,7 +288,7 @@ function attachPresenceWatcher(
         snapshot.key
       }, with presence: ${JSON.stringify(newUserStatus)}`
     );
-    onPresenceChanged(snapshot.key ?? "", newUserStatus.state === "online");
+    onPresenceChanged(snapshot.key || "", newUserStatus.state === "online");
   });
 }
 

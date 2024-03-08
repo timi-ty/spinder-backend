@@ -4,6 +4,7 @@
     "start": "npm run watch:code",
     "build": "tsc",
     "dev": "npm run build && node ./dist/app.js",
+    "prod": "node ./dist/app.js",
     "watch:code": "nodemon --watch src -e js,ts,json,css,html --exec \"npm run dev\""
   },
   "devDependencies": {

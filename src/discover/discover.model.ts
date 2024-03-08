@@ -53,7 +53,7 @@ interface DiscoverDestination {
 
 const defaultDiscoverDestination: DiscoverDestination = {
   name: "Favourites",
-  image: "src/assets/ic_favourites_heart.svg", //Explore storing these app level images in firebase storage instead of at the frontend.
+  image: "/resources/ic_favourites_heart.svg", //Explore storing these app level images in firebase storage instead of at the frontend.
   id: "favourites",
   isFavourites: true, //Spinder uses Spotify favourites as the default discover destination.
 };
