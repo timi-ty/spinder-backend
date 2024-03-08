@@ -1,10 +1,16 @@
 {
+  "name": "spinder",
+  "description": "The fun way to discover Spotify music.",
+  "version": "1.0.0",
+  "engines": {
+    "node": "20.x"
+  },
   "type": "module",
   "scripts": {
-    "start": "npm run watch:code",
+    "start": "node ./dist/app.js",
     "build": "tsc",
     "dev": "npm run build && node ./dist/app.js",
-    "prod": "node ./dist/app.js",
+    "dev-watch": "npm run watch:code",
     "watch:code": "nodemon --watch src -e js,ts,json,css,html --exec \"npm run dev\""
   },
   "devDependencies": {
