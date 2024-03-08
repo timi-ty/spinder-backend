@@ -62,6 +62,8 @@ startDeckService();
 app.use(catchUndefined);
 app.use(catchError);
 
-app.listen(process.env.PORT, () => {
-  appLogger.info(`Spinder app listening on port ${process.env.PORT}...`);
+app.listen(process.env.BACKEND_PORT, () => {
+  appLogger.info(
+    `Spinder app listening on port ${process.env.BACKEND_PORT}...`
+  );
 });
