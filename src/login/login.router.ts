@@ -2,13 +2,11 @@ import { Express, Router } from "express";
 import {
   finalizeLogin,
   finishLoginWithSpotify,
+  requestLoginAccess,
   startLoginWithSpotify,
 } from "./login.controller.js";
 import { loginErrorHandler, loginRequestLogger } from "./login.middleware.js";
-import {
-  ensureFirebaseAuthenticatedUser,
-  ensureSpotifyAccessToken,
-} from "../auth/auth.middleware.js";
+import { ensureSpotifyAccessToken } from "../auth/auth.middleware.js";
 
 var loginRouter: Router;
 
@@ -19,6 +17,8 @@ function assembleLoginRouter(router: Router) {
   loginRouter.use(loginRequestLogger);
 
   loginRouter.get("/", startLoginWithSpotify);
+
+  loginRouter.get("/request_access", requestLoginAccess);
 
   //Callback touched by Spotify to complete auth flow.
   loginRouter.get("/callback", finishLoginWithSpotify);

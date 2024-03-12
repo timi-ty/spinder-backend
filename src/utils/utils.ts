@@ -42,6 +42,13 @@ function okRedirect(req: Request, res: Response, redirectUrl: string) {
   res.status(HttpStatusCode.SeeOther).redirect(redirectUrl);
 }
 
+function errorRedirect(req: Request, res: Response, redirectUrl: string) {
+  appLogger.debug(
+    `Responding to request at ${req.originalUrl} with an error redirect to: ${redirectUrl}`
+  );
+  res.status(HttpStatusCode.InternalServerError).redirect(redirectUrl);
+}
+
 //Returns count number of random items from a list. If the list size is less than count, the result size is equal to the list size.
 function getRandomItems<T>(list: T[], count: number): T[] {
   const shuffled = list.slice().sort(() => 0.5 - Math.random());
@@ -86,6 +93,7 @@ export {
   SpinderClientError,
   okResponse,
   okRedirect,
+  errorRedirect,
   getRandomItems,
   safeParseJson,
   mapAndFilter,

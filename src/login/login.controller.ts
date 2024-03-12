@@ -3,11 +3,16 @@ import randomstring from "randomstring";
 import querystring from "querystring";
 import { v4 as uuidv4 } from "uuid";
 import { Request, Response } from "express";
-import { createFirebaseCustomToken } from "../firebase/firebase.spinder.js";
+import {
+  createFirebaseCustomToken,
+  isExistingFirestoreDoc,
+  setFirestoreDoc,
+} from "../firebase/firebase.spinder.js";
 import { updateOrCreateSpinderUserData } from "../user/user.utils.js";
 import { FinalizeLoginData } from "./login.model.js";
 import {
   SpinderServerError,
+  errorRedirect,
   fiveMinutesInMillis,
   okRedirect,
   okResponse,
@@ -28,6 +33,23 @@ import {
 
 //TODO: Purge this Map of stale entries at intervals.
 const spotifyLoginStates: Map<string, string> = new Map(); //This map associates 5 minute cookies to Spotify login state. When a login callback is received, the callback req MUST have a cookie that exists in this map and the content MUST be the corresponding state.
+
+async function requestLoginAccess(req: Request, res: Response) {
+  try {
+    const email = req.query.email || null;
+    const allow = await isExistingFirestoreDoc(`allowedUsers/${email}`);
+    if (allow) {
+      okRedirect(req, res, process.env.GRANT_ACCESS_URL || "");
+    } else {
+      await setFirestoreDoc(`pendingUsers/${email}`, {});
+      okRedirect(req, res, process.env.PEND_ACCESS_URL || "");
+    }
+  } catch (error) {
+    console.error(error);
+    loginLogger.error("Failed to honor access request.");
+    errorRedirect(req, res, process.env.FRONTEND_ROOT || "");
+  }
+}
 
 //Launches the Spotify Authorization flow.
 function startLoginWithSpotify(req: Request, res: Response) {
@@ -213,4 +235,9 @@ async function finalizeLogin(
   }
 }
 
-export { startLoginWithSpotify, finishLoginWithSpotify, finalizeLogin };
+export {
+  requestLoginAccess,
+  startLoginWithSpotify,
+  finishLoginWithSpotify,
+  finalizeLogin,
+};
