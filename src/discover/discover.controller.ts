@@ -132,9 +132,9 @@ async function getDiscoverSources(
           image: "",
         },
         {
-          type: "Spinder People",
-          id: "spinderpeople",
-          name: "Spinder People",
+          type: "Spindr People",
+          id: "spindrpeople",
+          name: "Spindr People",
           image: "",
         },
         {
@@ -204,7 +204,7 @@ async function searchDiscoverSources(
     ).docs.map((doc) => {
       const spinderUserData: SpinderUserData = doc.data() as SpinderUserData;
       const spinderPersonSource: DiscoverSource = {
-        type: "Spinder Person",
+        type: "Spindr Person",
         id: doc.id,
         name: spinderUserData.name,
         image: spinderUserData.image,

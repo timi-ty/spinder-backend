@@ -32,7 +32,7 @@ async function getDeckTracks(
     case "Anything Me":
       deckItems = await getAnythingMeTracks(accessToken);
       break;
-    case "Spinder People":
+    case "Spindr People":
       deckItems = await getSpinderPeopleTracks();
       break;
     case "My Artists":
@@ -44,7 +44,7 @@ async function getDeckTracks(
     case "Vibe":
       deckItems = await getVibeTracks(accessToken, source.name);
       break;
-    case "Spinder Person":
+    case "Spindr Person":
       deckItems = await getSpinderPersonTracks(source.id);
       break;
     case "Artist":
