@@ -55,7 +55,6 @@ function startLoginWithSpotify(req: Request, res: Response) {
       scope: scope,
       redirect_uri: process.env.SPOTIFY_REDIRECT_URI,
       state: state,
-      show_dialog: true,
     });
   okRedirect(req, res, redirectUrl);
 }
