@@ -18,7 +18,7 @@ function assembleLoginRouter(router: Router) {
 
   loginRouter.get("/", startLoginWithSpotify);
 
-  loginRouter.get("/request_access", requestLoginAccess);
+  loginRouter.post("/request_access", requestLoginAccess);
 
   //Callback touched by Spotify to complete auth flow.
   loginRouter.get("/callback", finishLoginWithSpotify);

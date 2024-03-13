@@ -36,7 +36,8 @@ const spotifyLoginStates: Map<string, string> = new Map(); //This map associates
 
 async function requestLoginAccess(req: Request, res: Response) {
   try {
-    const email = req.query.email || null;
+    const email = req.body.email || null;
+    if (!email) throw new Error("Null email address");
     const allow = await isExistingFirestoreDoc(`allowedUsers/${email}`);
     if (allow) {
       okRedirect(req, res, process.env.GRANT_ACCESS_URL || "");

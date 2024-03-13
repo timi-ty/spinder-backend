@@ -2,6 +2,7 @@ import express from "express";
 import env from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import bodyParser from "body-parser";
 import { startFirebaseApp } from "./firebase/firebase.spinder.js";
 import { addLoginRouter, assembleLoginRouter } from "./login/login.router.js";
 import { addUserRouter, assembleUserRouter } from "./user/user.router.js";
@@ -28,7 +29,8 @@ app.use(
     origin: new RegExp(`^${process.env.FRONTEND_ROOT}`),
     credentials: true,
   }),
-  cookieParser()
+  cookieParser(),
+  bodyParser.urlencoded({ extended: false })
 );
 
 /**********Firebase Start**********/
