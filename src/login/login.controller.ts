@@ -236,9 +236,22 @@ async function finalizeLogin(
   }
 }
 
+function logout(
+  req: Request,
+  res: Response,
+  next: (error: SpinderServerError) => void
+) {
+  //Delete all authentication cookies.
+  res.cookie("spinder_spotify_access_token", "", { expires: new Date(0) });
+  res.cookie("spinder_spotify_refresh_token", "", { expires: new Date(0) });
+  res.cookie("spinder_firebase_custom_token", "", { expires: new Date(0) });
+  okResponse(req, res, "Logged Out");
+}
+
 export {
   requestLoginAccess,
   startLoginWithSpotify,
   finishLoginWithSpotify,
   finalizeLogin,
+  logout,
 };

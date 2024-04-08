@@ -2,6 +2,7 @@ import { Express, Router } from "express";
 import {
   finalizeLogin,
   finishLoginWithSpotify,
+  logout,
   requestLoginAccess,
   startLoginWithSpotify,
 } from "./login.controller.js";
@@ -19,6 +20,8 @@ function assembleLoginRouter(router: Router) {
   loginRouter.get("/", startLoginWithSpotify);
 
   loginRouter.post("/request_access", requestLoginAccess);
+
+  loginRouter.post("/logout", logout);
 
   //Callback touched by Spotify to complete auth flow.
   loginRouter.get("/callback", finishLoginWithSpotify);

@@ -18,10 +18,27 @@ import {
 import { appLogger } from "./utils/logger.js";
 import { startDeckService } from "./services/deck.service.js";
 import { addAuthRouter, assembleAuthRouter } from "./auth/auth.router.js";
+import { slowDown } from "express-slow-down";
 
 //TODO: console.log every error that you catch in a try/catch block and forward just a descriptive string message of the error source to the error handler middleware.
 
 env.config();
+const limiter = slowDown({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  delayAfter: 50, // Allow 5 requests per 15 minutes.
+  delayMs: (hits) => hits * 100, // Add 100 ms of delay to every request after the 5th one.
+
+  /**
+   * So:
+   *
+   * - requests 1-5 are not delayed.
+   * - request 6 is delayed by 600ms
+   * - request 7 is delayed by 700ms
+   * - request 8 is delayed by 800ms
+   *
+   * and so on. After 15 minutes, the delay is reset to 0.
+   */
+});
 
 const app = express();
 app.use(
@@ -30,14 +47,14 @@ app.use(
     credentials: true,
   }),
   cookieParser(),
-  bodyParser.urlencoded({ extended: false })
+  bodyParser.urlencoded({ extended: false }),
+  interceptRequestMismatch,
+  limiter
 );
 
 /**********Firebase Start**********/
 startFirebaseApp();
 /**********Firebase End************/
-
-app.use(interceptRequestMismatch);
 
 /**********Login Start**********/
 assembleLoginRouter(express.Router());
