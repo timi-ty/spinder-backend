@@ -1,4 +1,4 @@
-import { HttpStatusCode } from "axios";
+import { HttpStatusCode, all } from "axios";
 import randomstring from "randomstring";
 import querystring from "querystring";
 import { v4 as uuidv4 } from "uuid";
@@ -9,7 +9,7 @@ import {
   setFirestoreDoc,
 } from "../firebase/firebase.spinder.js";
 import { updateOrCreateSpinderUserData } from "../user/user.utils.js";
-import { FinalizeLoginData } from "./login.model.js";
+import { FinalizeLoginData, RequestAccessResult } from "./login.model.js";
 import {
   SpinderServerError,
   errorRedirect,
@@ -34,21 +34,32 @@ import {
 //TODO: Purge this Map of stale entries at intervals.
 const spotifyLoginStates: Map<string, string> = new Map(); //This map associates 5 minute cookies to Spotify login state. When a login callback is received, the callback req MUST have a cookie that exists in this map and the content MUST be the corresponding state.
 
-async function requestLoginAccess(req: Request, res: Response) {
+async function requestLoginAccess(
+  req: Request,
+  res: Response,
+  next: (error: SpinderServerError) => void
+) {
   try {
-    const email = req.body.email || null;
+    const email = req.query.email || null;
     if (!email) throw new Error("Null email address");
     const allow = await isExistingFirestoreDoc(`allowedUsers/${email}`);
     if (allow) {
-      okRedirect(req, res, process.env.GRANT_ACCESS_URL || "");
+      const allow: RequestAccessResult = "Allow";
+      okResponse(req, res, allow);
     } else {
       await setFirestoreDoc(`pendingUsers/${email}`, {});
-      okRedirect(req, res, process.env.PEND_ACCESS_URL || "");
+      const pend: RequestAccessResult = "Pend";
+      okResponse(req, res, pend);
     }
   } catch (error) {
     console.error(error);
     loginLogger.error("Failed to honor access request.");
-    errorRedirect(req, res, process.env.FRONTEND_ROOT || "");
+    next(
+      new SpinderServerError(
+        HttpStatusCode.InternalServerError,
+        new Error("Failed to honor access request.")
+      )
+    );
   }
 }
 

@@ -8,8 +8,7 @@ import { appLogger } from "./utils/logger.js";
 function interceptRequestMismatch(req: Request, res: Response, next: any) {
   const isBrowserUrl =
     req.originalUrl.endsWith("/api/login") ||
-    req.originalUrl.startsWith("/api/login/callback") ||
-    req.originalUrl.startsWith("/api/login/request_access");
+    req.originalUrl.startsWith("/api/login/callback");
   //Add more permitted browser urls here.
 
   if (req.xhr && isBrowserUrl) {

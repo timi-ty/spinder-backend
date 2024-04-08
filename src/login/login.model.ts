@@ -6,4 +6,6 @@ interface SilentLoginData {
   userId: string;
 }
 
-export { FinalizeLoginData, SilentLoginData };
+type RequestAccessResult = "Allow" | "Pend";
+
+export { FinalizeLoginData, SilentLoginData, RequestAccessResult };
