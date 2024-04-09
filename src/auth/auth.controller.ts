@@ -20,7 +20,8 @@ async function renewAuthentication(req: Request, res: Response) {
     null, //Leave the current name there.
     null, // Leave the current image there.
     accessToken,
-    refreshToken
+    refreshToken,
+    false //This endpoint should never work for anon users
   );
 
   okResponse(req, res, renewAuthResponse);

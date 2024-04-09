@@ -12,7 +12,11 @@ import {
   DiscoverSourceSearchResult,
 } from "./discover.model.js";
 import { HttpStatusCode } from "axios";
-import { getSpinderUserData } from "../user/user.utils.js";
+import {
+  getAuthOrAnonAccessToken,
+  getSpinderUserData,
+  isAnonUser,
+} from "../user/user.utils.js";
 import {
   filterOwnedSpotifyPlaylistsToDiscoverDestinations,
   getCountOrAllOwnedSpotifyPlaylistsAsDiscoverDestinations,
@@ -38,6 +42,7 @@ import {
 } from "../services/deck.service.js";
 import { DeckItem } from "../services/deck.model.js";
 import { SpinderUserData } from "../user/user.model.js";
+import { getAdminAccessToken } from "../services/admin.service.js";
 
 //Get the list of currently allowed discover destinations. The user's destination selection is part of the response.
 async function getDiscoverDestinations(
@@ -172,7 +177,7 @@ async function searchDiscoverSources(
 ) {
   try {
     const q = req.query.q || "";
-    const accessToken: string = req.cookies.spinder_spotify_access_token || "";
+    const accessToken: string = await getAuthOrAnonAccessToken(req);
 
     const spotifySearchResult = await searchSpotify(
       accessToken,
@@ -272,7 +277,7 @@ async function setDiscoverSource(
   next: (error: SpinderServerError) => void
 ) {
   const userId: string = req.cookies.userId || null;
-  const accessToken: string = req.cookies.spinder_spotify_access_token || "";
+  const accessToken: string = await getAuthOrAnonAccessToken(req);
   const source = req.query.source || null;
   try {
     if (!source) throw new Error("Invalid source."); //Replace with more sophisticated validation.
@@ -301,7 +306,7 @@ async function refillDiscoverSourceDeck(
   next: (error: SpinderServerError) => void
 ) {
   const userId: string = req.cookies.userId || null;
-  const accessToken: string = req.cookies.spinder_spotify_access_token || "";
+  const accessToken: string = await getAuthOrAnonAccessToken(req);
   try {
     const selectedSource = (await getSpinderUserData(userId))
       .selectedDiscoverSource;

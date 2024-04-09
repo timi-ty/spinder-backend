@@ -30,6 +30,7 @@ import {
   resetDestinationDeck,
   refillSourceDeck,
 } from "../services/deck.service.js";
+import { getAdminAccessToken } from "../services/admin.service.js";
 
 //TODO: Purge this Map of stale entries at intervals.
 const spotifyLoginStates: Map<string, string> = new Map(); //This map associates 5 minute cookies to Spotify login state. When a login callback is received, the callback req MUST have a cookie that exists in this map and the content MUST be the corresponding state.
@@ -208,7 +209,8 @@ async function finalizeLogin(
       userProfile.display_name,
       userProfile.images.length > 0 ? userProfile.images[0].url : "",
       accessToken,
-      refreshToken
+      refreshToken,
+      false
     );
     //We carry out these deck initilaization tasks for a new user
     if (isNewUser) {
@@ -241,6 +243,85 @@ async function finalizeLogin(
         HttpStatusCode.InternalServerError,
         new Error(
           `Failed to finalize login with firebase for user with, Id: ${userProfile.id}.`
+        )
+      )
+    );
+  }
+}
+
+async function anonymousLogin(
+  req: Request,
+  res: Response,
+  next: (error: SpinderServerError) => void
+) {
+  //If login was previously finalized less than an hour ago, the custom token will still be available and we can login silently (quicker).
+  const customToken: string = req.cookies.spinder_firebase_custom_token || null;
+  //If this browser has been used for an anonymous login, it will have an anon cookie
+  var userId: string = req.cookies.anon_user_id || null;
+  if (userId === null) userId = uuidv4();
+
+  //Silent login.
+  if (customToken) {
+    try {
+      const finalizeLoginData: FinalizeLoginData = {
+        firebaseCustomToken: customToken,
+      };
+      loginLogger.debug(
+        `Silently logging in user with custom token: ${customToken}`
+      );
+      okResponse(req, res, finalizeLoginData);
+    } catch (error) {
+      console.error(error);
+      next(
+        new SpinderServerError(
+          HttpStatusCode.InternalServerError,
+          new Error(`Failed to finalize (silent) login with firebase for user.`)
+        )
+      );
+    }
+    return;
+  }
+
+  try {
+    const finalizeLoginData: FinalizeLoginData = {
+      firebaseCustomToken: await createFirebaseCustomToken(userId),
+    };
+    const [userData, isNewUser] = await updateOrCreateSpinderUserData(
+      userId,
+      "FlyButterfly020",
+      "",
+      null,
+      null,
+      true
+    );
+    //We carry out these deck initilaization tasks for a new user
+    if (isNewUser) {
+      const accessToken = await getAdminAccessToken();
+      refillSourceDeck(userId, accessToken, userData.selectedDiscoverSource);
+    }
+    //End of initialization tasks
+    res.cookie("anon_user_id", userId, {
+      maxAge: oneYearInMillis,
+      httpOnly: true,
+      secure: true,
+    });
+    res.cookie(
+      "spinder_firebase_custom_token",
+      finalizeLoginData.firebaseCustomToken,
+      {
+        maxAge: oneHourInMillis,
+        httpOnly: true,
+        secure: true,
+      }
+    );
+    okResponse(req, res, finalizeLoginData);
+  } catch (error) {
+    console.error(error);
+    next(
+      new SpinderServerError(
+        HttpStatusCode.InternalServerError,
+        new Error(
+          `Failed to finalize login with firebase for user with, Id: ${userId}.`
         )
       )
     );

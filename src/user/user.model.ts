@@ -12,6 +12,7 @@ interface SpinderUserData {
   selectedDiscoverDestination: DiscoverDestination;
   accessToken: string;
   refreshToken: string;
+  isAnon: boolean;
 }
 
 const defaultSpinderUserData: SpinderUserData = {
@@ -21,6 +22,7 @@ const defaultSpinderUserData: SpinderUserData = {
   selectedDiscoverDestination: defaultDiscoverDestination,
   accessToken: "",
   refreshToken: "",
+  isAnon: true,
 };
 
 export { SpinderUserData, defaultSpinderUserData };
