@@ -10,6 +10,7 @@ import {
   DiscoverSource,
   DiscoverSourceData,
   DiscoverSourceSearchResult,
+  defaultAnonDiscoverSource,
 } from "./discover.model.js";
 import { HttpStatusCode } from "axios";
 import {
@@ -22,7 +23,6 @@ import {
   getCountOrAllOwnedSpotifyPlaylistsAsDiscoverDestinations,
 } from "./discover.util.js";
 import {
-  clearFirestoreCollection,
   deleteFirestoreDoc,
   setFirestoreDoc,
   stringSearchFirestoreCollection,
@@ -130,6 +130,7 @@ async function getDiscoverSources(
     var discoverSourceTypesData: DiscoverSourceData = {
       selectedSource: userData.selectedDiscoverSource,
       availableSources: [
+        defaultAnonDiscoverSource,
         {
           type: "Anything Me",
           id: "anythingme",

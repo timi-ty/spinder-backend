@@ -1,12 +1,12 @@
 import {
   getFirestoreDoc,
-  isExistingFirestoreDoc,
   setFirestoreDoc,
 } from "../firebase/firebase.spinder.js";
 import { SpinderUserData, defaultSpinderUserData } from "./user.model.js";
 import { userMarkerLog } from "../utils/logger.js";
-import { Request, Response } from "express";
+import { Request } from "express";
 import { getAdminAccessToken } from "../services/admin.service.js";
+import { defaultAnonDiscoverSource } from "../discover/discover.model.js";
 
 //Returns the user data and whether or not this is a newly created user.
 async function updateOrCreateSpinderUserData(
@@ -20,35 +20,24 @@ async function updateOrCreateSpinderUserData(
   var spinderUserData = await getFirestoreDoc<SpinderUserData>(
     `users/${userId}`
   );
-
   if (spinderUserData === null) {
     spinderUserData = { ...defaultSpinderUserData };
-    spinderUserData.accessToken = accessToken || "";
-    spinderUserData.refreshToken = refreshToken || "";
-    spinderUserData.isAnon = isAnon;
-    if (displayName) spinderUserData.name = displayName;
-    if (image) spinderUserData.image = image;
-    await setFirestoreDoc(`users/${userId}`, spinderUserData, false);
+    if (isAnon)
+      spinderUserData.selectedDiscoverSource = defaultAnonDiscoverSource;
     userMarkerLog(
-      `Set default Spinder user data at users/${userId} with defaultData - ${JSON.stringify(
-        spinderUserData
-      )}`
+      `Setting default Spinder user data at users/${userId} with defaultData`
     );
-    return [spinderUserData, true];
   } else {
-    spinderUserData.accessToken = accessToken || "";
-    spinderUserData.refreshToken = refreshToken || "";
-    spinderUserData.isAnon = isAnon;
-    if (displayName) spinderUserData.name = displayName;
-    if (image) spinderUserData.image = image;
-    await setFirestoreDoc(`users/${userId}`, spinderUserData, false);
-    userMarkerLog(
-      `Updated existing Spinder user data at users/${userId}, data - ${JSON.stringify(
-        spinderUserData
-      )}`
-    );
-    return [spinderUserData, false];
+    userMarkerLog(`Updating existing Spinder user data at users/${userId}`);
   }
+
+  spinderUserData.accessToken = accessToken || "";
+  spinderUserData.refreshToken = refreshToken || "";
+  spinderUserData.isAnon = isAnon;
+  if (displayName) spinderUserData.name = displayName;
+  if (image) spinderUserData.image = image;
+  await setFirestoreDoc(`users/${userId}`, spinderUserData, false);
+  return [spinderUserData, false];
 }
 
 async function getSpinderUserData(userId: string): Promise<SpinderUserData> {

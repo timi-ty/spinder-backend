@@ -1,5 +1,6 @@
 import { Express, Router } from "express";
 import {
+  anonymousLogin,
   finalizeLogin,
   finishLoginWithSpotify,
   logout,
@@ -25,6 +26,8 @@ function assembleLoginRouter(router: Router) {
 
   //Callback touched by Spotify to complete auth flow.
   loginRouter.get("/callback", finishLoginWithSpotify);
+
+  loginRouter.get("/anon", anonymousLogin);
 
   //Finalize login requires Spotify access token, this ensures that it is available.
   loginRouter.use(ensureSpotifyAccessToken(false));

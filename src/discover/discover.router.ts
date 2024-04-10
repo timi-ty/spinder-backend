@@ -28,8 +28,7 @@ function assembleDiscoverRouter(router: Router) {
   //Print login requests to the console.
   discoverRouter.use(discoverRequestLogger);
 
-  //All discover endpoints require the user to be fully authenticated.
-  discoverRouter.use(ensureSpotifyAccessToken(false));
+  //All discover endpoints require the user to be firebase authenticated.
   discoverRouter.use(ensureFirebaseAuthenticatedUser);
 
   discoverRouter.get("/sources", getDiscoverSources);
@@ -38,13 +37,16 @@ function assembleDiscoverRouter(router: Router) {
 
   discoverRouter.get("/sources/search", searchDiscoverSources);
 
+  discoverRouter.get("/deck/source/refill", refillDiscoverSourceDeck);
+
+  //Some discover endpoints require the user to be SPotify authenticated
+  discoverRouter.use(ensureSpotifyAccessToken(false));
+
   discoverRouter.get("/destinations", getDiscoverDestinations);
 
   discoverRouter.post("/destination", setDiscoverDestination);
 
   discoverRouter.get("/destinations/search", searchDiscoverDestinations);
-
-  discoverRouter.get("/deck/source/refill", refillDiscoverSourceDeck);
 
   discoverRouter.get("/deck/destination/reset", resetDiscoverDestinationDeck);
 

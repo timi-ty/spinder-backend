@@ -66,6 +66,8 @@ async function requestLoginAccess(
 
 //Launches the Spotify Authorization flow.
 function startLoginWithSpotify(req: Request, res: Response) {
+  deleteAllAuthenticationCookies(res);
+
   const state = randomstring.generate(16);
   const scope =
     "user-read-private user-read-email playlist-read-private user-top-read playlist-modify-public playlist-modify-private user-library-read user-follow-read user-library-modify";
@@ -333,11 +335,14 @@ function logout(
   res: Response,
   next: (error: SpinderServerError) => void
 ) {
-  //Delete all authentication cookies.
+  deleteAllAuthenticationCookies(res);
+  okResponse(req, res, "Logged Out");
+}
+
+function deleteAllAuthenticationCookies(res: Response) {
   res.cookie("spinder_spotify_access_token", "", { expires: new Date(0) });
   res.cookie("spinder_spotify_refresh_token", "", { expires: new Date(0) });
   res.cookie("spinder_firebase_custom_token", "", { expires: new Date(0) });
-  okResponse(req, res, "Logged Out");
 }
 
 export {
@@ -345,5 +350,6 @@ export {
   startLoginWithSpotify,
   finishLoginWithSpotify,
   finalizeLogin,
+  anonymousLogin,
   logout,
 };
