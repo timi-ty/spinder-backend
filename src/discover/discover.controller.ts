@@ -137,12 +137,12 @@ async function getDiscoverSources(
           name: "Anything Me",
           image: "",
         },
-        {
-          type: "Spindr People",
-          id: "spindrpeople",
-          name: "Spindr People",
-          image: "",
-        },
+        // {
+        //   type: "Spindr People",
+        //   id: "spindrpeople",
+        //   name: "Spindr People",
+        //   image: "",
+        // },
         {
           type: "My Artists",
           id: "myartists",

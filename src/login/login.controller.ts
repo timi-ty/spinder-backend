@@ -12,7 +12,6 @@ import { updateOrCreateSpinderUserData } from "../user/user.utils.js";
 import { FinalizeLoginData, RequestAccessResult } from "./login.model.js";
 import {
   SpinderServerError,
-  errorRedirect,
   fiveMinutesInMillis,
   okRedirect,
   okResponse,
