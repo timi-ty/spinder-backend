@@ -1,4 +1,5 @@
 import { SpinderUserData } from "../user/user.model";
+import { spindrRadio } from "./discover.radio";
 
 //Composite sources function on their own as usable discover sources.
 type DiscoverCompositeSource =
@@ -30,13 +31,7 @@ const defaultDiscoverSource: DiscoverSource = {
   image: "", //Explore storing these app level images in firebase storage instead of at the frontend.
 };
 
-const defaultAnonDiscoverSource: DiscoverSource = {
-  type: "Playlist",
-  id: "4ui9CIjiY9ZjsFo8slMhH7",
-  name: "Spindr Radio",
-  image:
-    "https://img.etimg.com/thumb/msid-89919334,width-300,height-225,imgsize-35954,resizemode-75/radio.jpg", //Explore storing these app level images in firebase storage instead of at the frontend.
-};
+const defaultAnonDiscoverSource = spindrRadio[0];
 
 interface DiscoverSourceData {
   selectedSource: DiscoverSource;

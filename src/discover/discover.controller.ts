@@ -43,6 +43,7 @@ import {
 import { DeckItem } from "../services/deck.model.js";
 import { SpinderUserData } from "../user/user.model.js";
 import { getAdminAccessToken } from "../services/admin.service.js";
+import { spindrRadio } from "./discover.radio.js";
 
 //Get the list of currently allowed discover destinations. The user's destination selection is part of the response.
 async function getDiscoverDestinations(
@@ -130,7 +131,7 @@ async function getDiscoverSources(
     var discoverSourceTypesData: DiscoverSourceData = {
       selectedSource: userData.selectedDiscoverSource,
       availableSources: [
-        defaultAnonDiscoverSource,
+        ...spindrRadio,
         {
           type: "Anything Me",
           id: "anythingme",
