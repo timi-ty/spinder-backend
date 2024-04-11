@@ -1,5 +1,4 @@
-import { SpinderUserData } from "../user/user.model";
-import { spindrRadio } from "./discover.radio";
+import { spindrRadio } from "./discover.radio.js";
 
 //Composite sources function on their own as usable discover sources.
 type DiscoverCompositeSource =

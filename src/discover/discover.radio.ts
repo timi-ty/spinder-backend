@@ -1,4 +1,4 @@
-import { DiscoverSource } from "./discover.model";
+import { DiscoverSource } from "./discover.model.js";
 
 const afrobeatsApril2024: DiscoverSource = {
   type: "Playlist",
