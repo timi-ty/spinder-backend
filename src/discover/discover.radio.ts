@@ -1,7 +1,7 @@
 import { DiscoverSource } from "./discover.model.js";
 
 const afrobeatsApril2024: DiscoverSource = {
-  type: "Playlist",
+  type: "Radio",
   id: "17tLe3tCu3NGUisFViFRSi",
   name: "Spindr Radio",
   image:

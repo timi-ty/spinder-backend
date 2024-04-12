@@ -53,6 +53,9 @@ async function getDeckTracks(
     case "Playlist":
       deckItems = await getPlaylistTracks(accessToken, source.id);
       break;
+    case "Radio":
+      deckItems = await getRadioTracks(accessToken, source.id);
+      break;
   }
 
   if (deckItems.length < 2) {
@@ -67,15 +70,16 @@ async function getAnythingMeTracks(
   accessToken: string,
   count: number = 50
 ): Promise<DeckItem[]> {
-  const halfCount = count / 2;
+  const knownSongsCount = Math.max(1, Math.round(count * 0.2));
+  const recommendationCount = Math.max(1, Math.round(count * 0.8));
   //Get just 1 top track to obtain the total number of available top tracks.
   const oneTrack = await getSpotifyUserTopTracks(accessToken, 0, 1);
   //Calculate the maximum possible offset. We cannot offset more than the total minus the number of tracks we want.
-  const maxOffset = Math.max(oneTrack.total - halfCount, 0);
+  const maxOffset = Math.max(oneTrack.total - knownSongsCount, 0);
   //Compute a random offset between 0 (inclusive) and the maxOffset (inclusive).
   const offset = Math.round(Math.random() * maxOffset);
   //Compute limit. We want to get 25 tracks, but we may not have up to that.
-  const limit = Math.min(oneTrack.total - offset, halfCount);
+  const limit = Math.min(oneTrack.total - offset, knownSongsCount);
   //Get the user's top tracks between with offset and limit.
   const topTracks = await getSpotifyUserTopTracks(accessToken, offset, limit);
   //Select up to 5 random tracks from our top tracks to use as reccommendation seeds.
@@ -84,7 +88,7 @@ async function getAnythingMeTracks(
   const recommendationTracks = await getSpotifyRecommendationsFromTracks(
     accessToken,
     randomTopTracks.map((track) => track.id),
-    halfCount
+    recommendationCount
   );
   //Shuffling is pointless here because firestore by default orders data by id. If we want shuffling, it has to be implemented there.
   const anythingMeTracks = [...topTracks.items, ...recommendationTracks.tracks];
@@ -208,6 +212,39 @@ async function getPlaylistTracks(
   const playlistTracks = playlistTrackItems.items.map((item) => item.track);
 
   return completeDeckData(playlistTracks, accessToken);
+}
+
+async function getRadioTracks(
+  accessToken: string,
+  playlistId: string,
+  count: number = 50
+): Promise<DeckItem[]> {
+  const playlistTrackItems = await getSpotifyUserPlaylistTracks(
+    accessToken,
+    playlistId,
+    0,
+    count
+  );
+  const knownSongsCount = Math.max(1, Math.round(count * 0.2));
+  const recommendationCount = Math.max(1, Math.round(count * 0.8));
+
+  //TODO: Get a random set of count tracks from the playlist instead of just the first count.
+  const playlistTracks = playlistTrackItems.items.map((item) => item.track);
+
+  const randomTracks = getRandomItems(playlistTracks, 5);
+  //Get 25 more tracks by way of spotify recommendation.
+  const recommendationTracks = await getSpotifyRecommendationsFromTracks(
+    accessToken,
+    randomTracks.map((track) => track.id),
+    recommendationCount
+  );
+  //Shuffling is pointless here because firestore by default orders data by id. If we want shuffling, it has to be implemented there.
+  const radioTracks = [
+    ...getRandomItems(playlistTracks, knownSongsCount),
+    ...recommendationTracks.tracks,
+  ];
+
+  return completeDeckData(radioTracks, accessToken);
 }
 
 async function getVibeTracks(accessToken: string, vibe: string) {

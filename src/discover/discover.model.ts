@@ -12,7 +12,8 @@ type DiscoverSoloSource =
   | "Vibe" //Search playlists with this word(s) and randomly mix the tracks in them.
   | "Spindr Person" //"Anything Me" but for someone else.
   | "Artist" //Mix up a single artist's discography and deliver.
-  | "Playlist"; //Deliver the playlist as is.
+  | "Playlist" //Deliver the playlist as is.
+  | "Radio"; //Deliver the playlist mixed with recommendations.
 
 type DiscoverSourceType = DiscoverCompositeSource | DiscoverSoloSource;
 

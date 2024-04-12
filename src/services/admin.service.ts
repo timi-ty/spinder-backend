@@ -5,8 +5,9 @@ import {
   getSpinderUserData,
   updateOrCreateSpinderUserData,
 } from "../user/user.utils.js";
+import { oneHourInMillis } from "../utils/utils.js";
 
-const adminTokenValidTill = Date.now();
+var adminTokenValidTill = Date.now();
 
 async function getAdminAccessToken(): Promise<string> {
   const adminUserData = await getSpinderUserData("880uagq8urtkncs7oug05l85x");
@@ -26,6 +27,7 @@ async function getAdminAccessToken(): Promise<string> {
       newToken.refresh_token,
       false
     );
+    adminTokenValidTill = Date.now() + oneHourInMillis;
     return newToken.access_token;
   }
 }
