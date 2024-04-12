@@ -1,6 +1,7 @@
 import { DiscoverSource } from "./discover.model.js";
 
 const afrobeatsApril2024: DiscoverSource = {
+  //https://open.spotify.com/playlist/17tLe3tCu3NGUisFViFRSi?si=4316485a78874f74
   type: "Radio",
   id: "17tLe3tCu3NGUisFViFRSi",
   name: "Spindr Radio",
