@@ -1,5 +1,3 @@
-//Start nodejs interval here to renew the admin authentication every hour
-
 import { refreshSpotifyAccessToken } from "../spotify/spotify.api.js";
 import {
   getSpinderUserData,
@@ -10,7 +8,9 @@ import { oneHourInMillis } from "../utils/utils.js";
 var adminTokenValidTill = Date.now();
 
 async function getAdminAccessToken(): Promise<string> {
-  const adminUserData = await getSpinderUserData("880uagq8urtkncs7oug05l85x");
+  const adminUserData = await getSpinderUserData(
+    process.env.SPOTIFY_ADMIN_UID || ""
+  );
   if (adminTokenValidTill > Date.now()) {
     //Admin token is still valid
     return adminUserData.accessToken;

@@ -10,13 +10,11 @@ import {
   DiscoverSource,
   DiscoverSourceData,
   DiscoverSourceSearchResult,
-  defaultAnonDiscoverSource,
 } from "./discover.model.js";
 import { HttpStatusCode } from "axios";
 import {
   getAuthOrAnonAccessToken,
   getSpinderUserData,
-  isAnonUser,
 } from "../user/user.utils.js";
 import {
   filterOwnedSpotifyPlaylistsToDiscoverDestinations,
@@ -42,7 +40,6 @@ import {
 } from "../services/deck.service.js";
 import { DeckItem } from "../services/deck.model.js";
 import { SpinderUserData } from "../user/user.model.js";
-import { getAdminAccessToken } from "../services/admin.service.js";
 import { spindrRadio } from "./discover.radio.js";
 
 //Get the list of currently allowed discover destinations. The user's destination selection is part of the response.

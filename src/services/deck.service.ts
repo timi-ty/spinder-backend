@@ -4,7 +4,6 @@ import {
 } from "../discover/discover.model.js";
 import {
   attachPresenceWatcher,
-  batchDeleteFirestoreDocs,
   batchSetFirestoreDocs,
   clearFirestoreCollection,
   deleteFirestoreDoc,
@@ -16,9 +15,7 @@ import {
   getSpotifyUserPlaylistTracks,
   getSpotifyUserSavedTracks,
 } from "../spotify/spotify.api.js";
-import { getSpinderUserData } from "../user/user.utils.js";
 import { deckLogger } from "../utils/logger.js";
-import { getAdminAccessToken } from "./admin.service.js";
 import { getDeckTracks } from "./deck.filler.js";
 import { DeckItem } from "./deck.model.js";
 
