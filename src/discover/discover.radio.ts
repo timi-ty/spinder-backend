@@ -31,7 +31,7 @@ const indieMix: DiscoverSource = {
   //https://open.spotify.com/playlist/37i9dQZF1EQqkOPvHGajmW?si=70779828c59543c8
   type: "Radio",
   id: "37i9dQZF1EQqkOPvHGajmW",
-  name: "Spindr Afro Radio",
+  name: "Spindr Indie Radio",
   image:
     "https://img.etimg.com/thumb/msid-89919334,width-300,height-225,imgsize-35954,resizemode-75/radio.jpg", //Explore storing these app level images in firebase storage instead of at the frontend.
 };
