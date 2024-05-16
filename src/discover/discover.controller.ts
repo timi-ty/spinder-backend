@@ -276,9 +276,9 @@ async function setDiscoverSource(
   next: (error: SpinderServerError) => void
 ) {
   const userId: string = req.cookies.userId || null;
-  const accessToken: string = await getAuthOrAnonAccessToken(req);
   const source = req.query.source || null;
   try {
+    const accessToken: string = await getAuthOrAnonAccessToken(req);
     if (!source) throw new Error("Invalid source."); //Replace with more sophisticated validation.
     const selectedSource: DiscoverSource = safeParseJson(source as string); //as sring should no longer be needed if source is properly validated.
     await updateFirestoreDoc(`users/${userId}`, {
@@ -305,8 +305,8 @@ async function refillDiscoverSourceDeck(
   next: (error: SpinderServerError) => void
 ) {
   const userId: string = req.cookies.userId || null;
-  const accessToken: string = await getAuthOrAnonAccessToken(req);
   try {
+    const accessToken: string = await getAuthOrAnonAccessToken(req);
     const selectedSource = (await getSpinderUserData(userId))
       .selectedDiscoverSource;
     refillSourceDeck(userId, accessToken, selectedSource); //Dispatches and responds immediately. The frontend listens to the source deck filling up.
