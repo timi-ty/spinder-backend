@@ -13,7 +13,7 @@ const alteCruise: DiscoverSource = {
   //https://open.spotify.com/playlist/37i9dQZF1DX5ja5oV6Kto0?si=bd37de31f7ab4e2d
   type: "Radio",
   id: "37i9dQZF1DX5ja5oV6Kto0",
-  name: "Spindr Alte' Radio",
+  name: "Spindr Alte Radio",
   image:
     "https://img.etimg.com/thumb/msid-89919334,width-300,height-225,imgsize-35954,resizemode-75/radio.jpg", //Explore storing these app level images in firebase storage instead of at the frontend.
 };
