@@ -1,5 +1,3 @@
-import { spindrRadio } from "./discover.radio.js";
-
 //Composite sources function on their own as usable discover sources.
 type DiscoverCompositeSource =
   | "Anything Me" //Randomly get 25 tracks from the user's top items, and use 5 of those to seed spotify recommendations for another 25 tracks.
@@ -30,8 +28,6 @@ const defaultDiscoverSource: DiscoverSource = {
   name: "Anything Me",
   image: "", //Explore storing these app level images in firebase storage instead of at the frontend.
 };
-
-const defaultAnonDiscoverSource = spindrRadio[0];
 
 interface DiscoverSourceData {
   selectedSource: DiscoverSource;
@@ -76,7 +72,6 @@ interface DiscoverDestinationSearchResult {
 export {
   DiscoverSource,
   defaultDiscoverSource,
-  defaultAnonDiscoverSource,
   DiscoverSourceData,
   DiscoverSourceSearchResult,
   DiscoverDestination,

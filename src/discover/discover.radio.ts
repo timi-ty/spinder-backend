@@ -36,9 +36,10 @@ const indieMix: DiscoverSource = {
     "https://img.etimg.com/thumb/msid-89919334,width-300,height-225,imgsize-35954,resizemode-75/radio.jpg", //Explore storing these app level images in firebase storage instead of at the frontend.
 };
 
-export const spindrRadio = [
-  afrobeatsApril2024,
-  alteCruise,
-  hipHopMix,
-  indieMix,
-];
+const spindrRadio = [afrobeatsApril2024, alteCruise, hipHopMix, indieMix];
+
+function defaultAnonDiscoverSource(): DiscoverSource {
+  return spindrRadio[Math.floor(Math.random() * spindrRadio.length)];
+}
+
+export { spindrRadio, defaultAnonDiscoverSource };

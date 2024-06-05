@@ -6,7 +6,7 @@ import { SpinderUserData, defaultSpinderUserData } from "./user.model.js";
 import { userMarkerLog } from "../utils/logger.js";
 import { Request } from "express";
 import { getAdminAccessToken } from "../services/admin.service.js";
-import { defaultAnonDiscoverSource } from "../discover/discover.model.js";
+import { defaultAnonDiscoverSource } from "../discover/discover.radio.js";
 
 //Returns the user data and whether or not this is a newly created user.
 async function updateOrCreateSpinderUserData(
@@ -23,7 +23,7 @@ async function updateOrCreateSpinderUserData(
   if (spinderUserData === null) {
     spinderUserData = { ...defaultSpinderUserData };
     if (isAnon)
-      spinderUserData.selectedDiscoverSource = defaultAnonDiscoverSource;
+      spinderUserData.selectedDiscoverSource = defaultAnonDiscoverSource();
     userMarkerLog(
       `Setting default Spinder user data at users/${userId} with defaultData`
     );
