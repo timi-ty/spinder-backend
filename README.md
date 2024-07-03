@@ -30,14 +30,14 @@ Stay connected with Spindr's presence feature:
 - Utilizes Firebase Realtime Database to monitor user presence.
 - Accurately tracks if a user is online or offline, enhancing real-time interactions.
 
-### 🌐 Environment Setup
+## 🌐 Environment Setup
 
 To get started with Spindr, follow these steps:
 
-1. **Clone the repository**:
+1. Clone the repository:
    ```sh
-   git clone https://github.com/yourusername/spindr.git
-   cd spindr
+   git clone https://github.com/timi-ty/spinder-backend.git
+   cd spinder-backend
    ```
 2. Install dependencies:
 ```sh
@@ -65,11 +65,7 @@ npm run dev
 ## 📂 Project Structure
 
 Here's a glimpse of the organized structure of our main app:
-
-📁 Project Structure
-bash
-Copy code
-.
+```
 ├── app.js                   # Main application file
 ├── firebase/
 │   └── firebase.spinder.js  # Firebase initialization
@@ -82,10 +78,12 @@ Copy code
 ├── auth/
 │   └── auth.router.js       # Authentication routes
 └── app.middleware.js        # Middleware for handling errors and requests
+```
 
-🤝 Contributing
+## 🤝 Contributing
+
 We welcome contributions! Feel free to submit issues and pull requests to help improve Spindr. Reach me at [timilehin.ty@gmail.com](timilehin.ty@gmail.com)
 
-📄 License
+## 📄 License
 This project is licensed under the GPL License - see the [LICENSE](LICENSE) file for details.
 
