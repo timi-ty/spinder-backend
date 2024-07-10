@@ -3,7 +3,7 @@
   "description": "The fun way to discover Spotify music.",
   "version": "1.0.0",
   "engines": {
-    "node": "^20.x"
+    "node": "22.x"
   },
   "type": "module",
   "scripts": {
