@@ -1,0 +1,92 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: prod
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Build TypeScript
+        working-directory: backend
+        run: npm run prod-build
+
+      - name: Create deployment package
+        working-directory: backend
+        run: tar -czf ../backend-deploy.tar.gz dist package.json package-lock.json
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.SSH_PORT }} -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Upload deployment package
+        run: |
+          scp -P ${{ secrets.SSH_PORT }} -i ~/.ssh/deploy_key \
+            backend-deploy.tar.gz \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/
+
+      - name: Deploy to server
+        run: |
+          ssh -p ${{ secrets.SSH_PORT }} -i ~/.ssh/deploy_key \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'DEPLOY_SCRIPT'
+          set -e
+
+          DEPLOY_DIR="/var/www/spindr.pro/backend"
+
+          echo "==> Backing up .env"
+          cp "$DEPLOY_DIR/.env" /tmp/.env.backup
+
+          echo "==> Stopping PM2 process"
+          pm2 stop app || true
+
+          echo "==> Cleaning deployment directory"
+          cd "$DEPLOY_DIR"
+          find . -mindepth 1 -maxdepth 1 ! -name 'node_modules' -exec rm -rf {} +
+
+          echo "==> Extracting new deployment"
+          tar -xzf /tmp/backend-deploy.tar.gz -C "$DEPLOY_DIR/"
+
+          echo "==> Restoring .env"
+          cp /tmp/.env.backup "$DEPLOY_DIR/.env"
+
+          echo "==> Installing production dependencies"
+          cd "$DEPLOY_DIR"
+          npm ci --omit=dev
+
+          echo "==> Restarting PM2"
+          pm2 restart app
+
+          echo "==> Cleanup"
+          rm -f /tmp/backend-deploy.tar.gz /tmp/.env.backup
+
+          echo "==> Deployment complete!"
+          pm2 status
+          DEPLOY_SCRIPT
+
+      - name: Cleanup SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
+
