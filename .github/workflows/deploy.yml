@@ -3,8 +3,6 @@ name: Deploy Backend
 on:
   push:
     branches: [main]
-    paths:
-      - 'backend/**'
   workflow_dispatch:
 
 jobs:
@@ -21,19 +19,16 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        working-directory: backend
         run: npm ci
 
       - name: Build TypeScript
-        working-directory: backend
         run: npm run prod-build
 
       - name: Create deployment package
-        working-directory: backend
-        run: tar -czf ../backend-deploy.tar.gz dist package.json package-lock.json
+        run: tar -czf backend-deploy.tar.gz dist package.json package-lock.json
 
       - name: Setup SSH
         run: |
@@ -89,4 +84,3 @@ jobs:
       - name: Cleanup SSH key
         if: always()
         run: rm -f ~/.ssh/deploy_key
-
