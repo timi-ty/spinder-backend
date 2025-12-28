@@ -82,7 +82,7 @@ async function getAnythingMeTracks(
   // Combine and shuffle
   const combined = [
     ...topTracks.items,
-    ...savedTracks.items.map((item) => item.track),
+    ...savedTracks.items.map((item) => item.track).filter(Boolean),
   ];
   const shuffled = getRandomItems(combined, combined.length);
 
@@ -166,7 +166,7 @@ async function getMyPlaylistsTracks(
       0,
       10
     ); //TODO: Get a random set of 10 tracks from the playlist instead of just the first 10.
-    myPlaylistsracks.push(...playlistTracks.items.map((item) => item.track));
+    myPlaylistsracks.push(...playlistTracks.items.map((item) => item.track).filter(Boolean));
   }
 
   return completeDeckData(myPlaylistsracks, accessToken);
@@ -214,7 +214,7 @@ async function getArtistTracks(
         0,
         10
       );
-      allTracks.push(...tracks.items.map((item) => item.track));
+      allTracks.push(...tracks.items.map((item) => item.track).filter(Boolean));
     }
   }
 
@@ -236,7 +236,7 @@ async function getPlaylistTracks(
     0,
     count
   ); //TODO: Get a random set of count tracks from the playlist instead of just the first count.
-  const playlistTracks = playlistTrackItems.items.map((item) => item.track);
+  const playlistTracks = playlistTrackItems.items.map((item) => item.track).filter(Boolean);
 
   return completeDeckData(playlistTracks, accessToken);
 }
@@ -252,7 +252,7 @@ async function getRadioTracks(
     0,
     count
   );
-  const playlistTracks = playlistTrackItems.items.map((item) => item.track);
+  const playlistTracks = playlistTrackItems.items.map((item) => item.track).filter(Boolean);
 
   // Shuffle the playlist tracks
   const shuffled = getRandomItems(playlistTracks, playlistTracks.length);
@@ -290,7 +290,7 @@ async function getVibeTracks(accessToken: string, vibe: string) {
       0,
       10
     ); //TODO: Get a random set of 10 tracks from the playlist instead of just the first 10.
-    vibePlaylistsracks.push(...playlistTracks.items.map((item) => item.track));
+    vibePlaylistsracks.push(...playlistTracks.items.map((item) => item.track).filter(Boolean));
   }
 
   return completeDeckData(vibePlaylistsracks, accessToken);

@@ -297,6 +297,42 @@ function detachAllPresenceWatchers() {
   statusDatabaseRef.off(); // Removes ALL callbacks attached to this ref.
 }
 
+async function cleanupStalePresenceEntries(maxAgeHours: number = 24): Promise<number> {
+  if (!database) {
+    throw new Error(
+      "Failed to cleanup presence. Database object does not exist. Call startFirebaseApp before calling any other functions."
+    );
+  }
+
+  const statusRef = database.ref("/status");
+  const snapshot = await statusRef.once("value");
+
+  if (!snapshot.exists()) return 0;
+
+  const now = Date.now();
+  const maxAgeMs = maxAgeHours * 60 * 60 * 1000;
+  const updates: Record<string, null> = {};
+
+  snapshot.forEach((child) => {
+    const status = child.val() as PresenceStatus;
+    const isOffline = status.state === "offline";
+    // lastChanged is a Firebase server timestamp (number)
+    const lastChanged = typeof status.lastChanged === "number" ? status.lastChanged : 0;
+    const isStale = lastChanged > 0 && (now - lastChanged) > maxAgeMs;
+
+    if (isOffline || isStale) {
+      updates[child.key!] = null; // null = delete in multi-path update
+    }
+  });
+
+  const count = Object.keys(updates).length;
+  if (count > 0) {
+    await statusRef.update(updates);
+    firebaseLogger.success(`Cleaned up ${count} stale presence entries from /status.`);
+  }
+  return count;
+}
+
 export {
   startFirebaseApp,
   createFirebaseCustomToken,
@@ -315,5 +351,6 @@ export {
   deleteFirestoreDoc,
   attachPresenceWatcher,
   detachAllPresenceWatchers,
+  cleanupStalePresenceEntries,
   PresenceStatus,
 };

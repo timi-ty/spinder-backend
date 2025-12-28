@@ -4,9 +4,10 @@ import {
 } from "../discover/discover.model.js";
 import {
   attachPresenceWatcher,
+  batchDeleteFirestoreDocs,
   batchSetFirestoreDocs,
+  cleanupStalePresenceEntries,
   clearFirestoreCollection,
-  deleteFirestoreDoc,
   getFirestoreCollectionSize,
   isExistingFirestoreDoc,
   setFirestoreDoc,
@@ -23,8 +24,15 @@ const sourceDeckMinSize = 20;
 const sourceDeckFillerSet: Set<string> = new Set();
 const destDeckEnumeratorSet: Set<string> = new Set();
 
-function startDeckService() {
-  attachPresenceWatcher(onPresenceChanged); //Currently, a user's presence is only useful for the deck filler, which is why it is attached here.
+// Buffered batch deletion for offline users
+const offlineUserBuffer: Set<string> = new Set();
+let batchDeleteTimeout: NodeJS.Timeout | null = null;
+const BATCH_DELETE_DELAY_MS = 2000;
+
+async function startDeckService() {
+  // Clean up stale entries BEFORE attaching watcher to prevent quota exhaustion
+  await cleanupStalePresenceEntries();
+  attachPresenceWatcher(onPresenceChanged);
 }
 
 function onPresenceChanged(userId: string, isOnline: boolean) {
@@ -43,14 +51,32 @@ async function onUserActive(userId: string) {
   }
 }
 
-async function onUserInactive(userId: string) {
+function onUserInactive(userId: string) {
+  offlineUserBuffer.add(userId);
+  
+  // Debounce: reset timer on each new offline user
+  if (batchDeleteTimeout) clearTimeout(batchDeleteTimeout);
+  batchDeleteTimeout = setTimeout(flushOfflineUserBuffer, BATCH_DELETE_DELAY_MS);
+}
+
+async function flushOfflineUserBuffer() {
+  if (offlineUserBuffer.size === 0) return;
+  
+  const userIds = Array.from(offlineUserBuffer);
+  offlineUserBuffer.clear();
+  batchDeleteTimeout = null;
+  
   try {
-    await deleteFirestoreDoc(`activeUsers/${userId}`);
+    // Chunk into batches of 500 (Firestore limit)
+    const BATCH_SIZE = 500;
+    for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
+      const chunk = userIds.slice(i, i + BATCH_SIZE);
+      await batchDeleteFirestoreDocs("activeUsers", chunk);
+    }
+    deckLogger.debug(`Batch deleted ${userIds.length} offline users from activeUsers.`);
   } catch (error) {
     console.error(error);
-    deckLogger.error(
-      `Deck service failed to assuredly remove now offline user ${userId} from the active users collection.`
-    );
+    deckLogger.error(`Failed to batch delete ${userIds.length} offline users from activeUsers.`);
   }
 }
 
