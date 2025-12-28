@@ -28,7 +28,9 @@ jobs:
         run: npm run prod-build
 
       - name: Create deployment package
-        run: tar -czf backend-deploy.tar.gz dist package.json package-lock.json
+        run: |
+          cp package.json package-lock.json dist/
+          tar -czf backend-deploy.tar.gz -C dist .
 
       - name: Setup SSH
         run: |
