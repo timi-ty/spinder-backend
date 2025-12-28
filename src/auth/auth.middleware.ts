@@ -28,15 +28,16 @@ function ensureSpotifyAccessToken(
         req.cookies.spinder_spotify_access_token = authToken.accessToken;
         req.cookies.spinder_spotify_access_token_expiry = authToken.maxAge;
 
+        const isProduction = process.env.NODE_ENV === "production";
         res.cookie("spinder_spotify_access_token", authToken.accessToken, {
           maxAge: authToken.maxAge,
           httpOnly: true,
-          secure: true,
+          secure: isProduction,
         });
         res.cookie("spinder_spotify_refresh_token", authToken.refreshToken, {
           maxAge: oneYearInMillis,
           httpOnly: true,
-          secure: true,
+          secure: isProduction,
         });
         authLogger.debug(
           `Finished refresh login: Token - ${authToken.accessToken}, Expiry - ${authToken.maxAge}`

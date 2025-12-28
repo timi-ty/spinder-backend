@@ -114,15 +114,16 @@ async function finishLoginWithSpotify(
     try {
       const spotifyToken = await requestSpotifyAccessToken(code as string); //Properly validate code to avoid this hack.
       const authToken = spotifyTokenToAuthToken(spotifyToken);
+      const isProduction = process.env.NODE_ENV === "production";
       res.cookie("spinder_spotify_access_token", authToken.accessToken, {
         maxAge: authToken.maxAge,
         httpOnly: true,
-        secure: true,
+        secure: isProduction,
       });
       res.cookie("spinder_spotify_refresh_token", authToken.refreshToken, {
         maxAge: oneYearInMillis,
         httpOnly: true,
-        secure: true,
+        secure: isProduction,
       });
       loginLogger.debug(
         `Finished login: Token - ${authToken.accessToken}, Expiry - ${authToken.maxAge}`
@@ -227,13 +228,14 @@ async function finalizeLogin(
       );
     }
     //End of initialization tasks
+    const isProduction = process.env.NODE_ENV === "production";
     res.cookie(
       "spinder_firebase_custom_token",
       finalizeLoginData.firebaseCustomToken,
       {
         maxAge: oneHourInMillis,
         httpOnly: true,
-        secure: true,
+        secure: isProduction,
       }
     );
     okResponse(req, res, finalizeLoginData);
@@ -301,10 +303,11 @@ async function anonymousLogin(
       refillSourceDeck(userId, accessToken, userData.selectedDiscoverSource);
     }
     //End of initialization tasks
+    const isProduction = process.env.NODE_ENV === "production";
     res.cookie("anon_user_id", userId, {
       maxAge: oneYearInMillis,
       httpOnly: true,
-      secure: true,
+      secure: isProduction,
     });
     res.cookie(
       "spinder_firebase_custom_token",
@@ -312,7 +315,7 @@ async function anonymousLogin(
       {
         maxAge: oneHourInMillis,
         httpOnly: true,
-        secure: true,
+        secure: isProduction,
       }
     );
     okResponse(req, res, finalizeLoginData);
