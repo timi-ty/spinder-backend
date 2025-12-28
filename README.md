@@ -1,4 +1,4 @@
-# 🎵 Spindr 🎵
+# Spindr
 
 Welcome to **Spindr**! 
 
@@ -8,29 +8,29 @@ This is the backend repo. Refer here for the frontend repo [Spindr frontend](htt
 
 This project brings the best of Spotify and Firebase together for a seamless and fun music discovery experience. Here's an overview of what makes Spindr special:
 
-## 🚀 Features
+## Features
 
-### 🎧 Spotify + Firebase Authentication
+### Spotify + Firebase Authentication
 Spindr uses the Spotify Authentication API combined with Firebase Custom Authentication. This means:
 - **Spotify API**: Authenticate users with their Spotify account.
 - **Firebase Client API**: Simultaneously authenticate users with Firebase for secure, real-time interactions.
 
-### 🛣️ Express.js Route Groups
+### Express.js Route Groups
 To keep things tidy and organized, Spindr leverages Express.js route groups:
 - Routes are neatly grouped and modular, making the codebase easy to maintain and extend.
 
-### 🛡️ Middleware Magic
+### Middleware Magic
 Spindr uses a robust middleware setup to handle:
 - **Authentication**: Ensures every request is securely authenticated.
 - **CORS**: Properly configured to allow cross-origin requests from the frontend.
 - **Rate Limiting**: Using `express-slow-down` to prevent abuse and ensure fair usage.
 
-### 🔥 Firebase Presence Watcher
+### Firebase Presence Watcher
 Stay connected with Spindr's presence feature:
 - Utilizes Firebase Realtime Database to monitor user presence.
 - Accurately tracks if a user is online or offline, enhancing real-time interactions.
 
-## 🌐 Environment Setup
+## Environment Setup
 
 To get started with Spindr, follow these steps:
 
@@ -62,7 +62,7 @@ GRANT_ACCESS_URL="http://[backend-root-url]/api/login"
 npm run dev
 ```
 
-## 📂 Project Structure
+## Project Structure
 
 Here's a glimpse of the organized structure of our main app:
 ```
@@ -80,10 +80,9 @@ Here's a glimpse of the organized structure of our main app:
 └── app.middleware.js        # Middleware for handling errors and requests
 ```
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Feel free to submit issues and pull requests to help improve Spindr. Reach me at [timilehin.ty@gmail.com](timilehin.ty@gmail.com)
 
-## 📄 License
+## License
 This project is licensed under the GPL License - see the [LICENSE](LICENSE) file for details.
-
