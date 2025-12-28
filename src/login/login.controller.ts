@@ -69,7 +69,7 @@ function startLoginWithSpotify(req: Request, res: Response) {
 
   const state = randomstring.generate(16);
   const scope =
-    "user-read-private user-read-email playlist-read-private user-top-read playlist-modify-public playlist-modify-private user-library-read user-follow-read user-library-modify";
+    "user-read-private user-read-email playlist-read-private user-top-read playlist-modify-public playlist-modify-private user-library-read user-follow-read user-library-modify streaming user-read-playback-state user-modify-playback-state";
 
   const uniqueId = uuidv4();
   spotifyLoginStates.set(uniqueId, state); //Associate every login request with a unique id.

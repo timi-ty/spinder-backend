@@ -2,12 +2,13 @@ import { DiscoverSource } from "../discover/discover.model.js";
 import { getFirestoreCollection } from "../firebase/firebase.spinder.js";
 import {
   getSpotifyFollowedArtists,
-  getSpotifyRecommendationsFromArtists,
-  getSpotifyRecommendationsFromTracks,
+  getSpotifyArtistTopTracks,
   getSpotifySeveralArtists,
   getSpotifyUserPlaylistTracks,
   getSpotifyUserPlaylists,
   getSpotifyUserTopTracks,
+  getSpotifyUserSavedTracks,
+  getSpotifyUserProfile,
   refreshSpotifyAccessToken,
   searchSpotify,
 } from "../spotify/spotify.api.js";
@@ -70,30 +71,22 @@ async function getAnythingMeTracks(
   accessToken: string,
   count: number = 50
 ): Promise<DeckItem[]> {
-  const knownSongsCount = Math.max(1, Math.round(count * 0.2));
-  const recommendationCount = Math.max(1, Math.round(count * 0.8));
-  //Get just 1 top track to obtain the total number of available top tracks.
-  const oneTrack = await getSpotifyUserTopTracks(accessToken, 0, 1);
-  //Calculate the maximum possible offset. We cannot offset more than the total minus the number of tracks we want.
-  const maxOffset = Math.max(oneTrack.total - knownSongsCount, 0);
-  //Compute a random offset between 0 (inclusive) and the maxOffset (inclusive).
-  const offset = Math.round(Math.random() * maxOffset);
-  //Compute limit. We want to get 25 tracks, but we may not have up to that.
-  const limit = Math.min(oneTrack.total - offset, knownSongsCount);
-  //Get the user's top tracks between with offset and limit.
-  const topTracks = await getSpotifyUserTopTracks(accessToken, offset, limit);
-  //Select up to 5 random tracks from our top tracks to use as reccommendation seeds.
-  const randomTopTracks = getRandomItems(topTracks.items, 5);
-  //Get 25 more tracks by way of spotify recommendation.
-  const recommendationTracks = await getSpotifyRecommendationsFromTracks(
-    accessToken,
-    randomTopTracks.map((track) => track.id),
-    recommendationCount
-  );
-  //Shuffling is pointless here because firestore by default orders data by id. If we want shuffling, it has to be implemented there.
-  const anythingMeTracks = [...topTracks.items, ...recommendationTracks.tracks];
+  const halfCount = Math.ceil(count / 2);
 
-  return completeDeckData(anythingMeTracks, accessToken);
+  // Get top tracks
+  const topTracks = await getSpotifyUserTopTracks(accessToken, 0, halfCount);
+
+  // Get saved tracks
+  const savedTracks = await getSpotifyUserSavedTracks(accessToken, 0, halfCount);
+
+  // Combine and shuffle
+  const combined = [
+    ...topTracks.items,
+    ...savedTracks.items.map((item) => item.track),
+  ];
+  const shuffled = getRandomItems(combined, combined.length);
+
+  return completeDeckData(shuffled, accessToken);
 }
 
 async function getSpinderPeopleTracks() {
@@ -122,18 +115,29 @@ async function getMyArtistsTracks(
   accessToken: string,
   count: number = 50
 ): Promise<DeckItem[]> {
-  const followedArtists = await getSpotifyFollowedArtists(accessToken, 50);
-  //Select up to 5 random artists from the followed artists to use as recommendation seeds.
-  const randomArtists = getRandomItems(followedArtists.artists.items, 5);
-  //Get 50 tracks by way of spotify recommendation.
-  const recommendationTracks = await getSpotifyRecommendationsFromArtists(
-    accessToken,
-    randomArtists.map((artist) => artist.id),
-    count
-  );
-  const followedArtistsTracks = recommendationTracks.tracks;
+  // Get user's market from profile
+  const userProfile = await getSpotifyUserProfile(accessToken);
+  const market = userProfile.country || "US";
 
-  return completeDeckData(followedArtistsTracks, accessToken);
+  const followedArtists = await getSpotifyFollowedArtists(accessToken, 10);
+  const randomArtists = getRandomItems(followedArtists.artists.items, 5);
+
+  // Get top tracks from each followed artist
+  const allTracks: SpotifyTrack[] = [];
+  for (const artist of randomArtists) {
+    const topTracks = await getSpotifyArtistTopTracks(
+      accessToken,
+      artist.id,
+      market
+    );
+    allTracks.push(...topTracks.tracks);
+  }
+
+  // Shuffle and limit to count
+  const shuffled = getRandomItems(allTracks, allTracks.length);
+  const limited = shuffled.slice(0, count);
+
+  return completeDeckData(limited, accessToken);
 }
 
 async function getMyPlaylistsTracks(
@@ -187,15 +191,38 @@ async function getArtistTracks(
   artistId: string,
   count: number = 50
 ): Promise<DeckItem[]> {
-  //Get 50 tracks by way of spotify recommendation.
-  const recommendationTracks = await getSpotifyRecommendationsFromArtists(
-    accessToken,
-    [artistId],
-    count
-  );
-  const artistTracks = recommendationTracks.tracks;
+  // Get user's market from profile
+  const userProfile = await getSpotifyUserProfile(accessToken);
+  const market = userProfile.country || "US";
 
-  return completeDeckData(artistTracks, accessToken);
+  // Get artist details for name
+  const artistDetails = await getSpotifySeveralArtists(accessToken, [artistId]);
+  const artistName = artistDetails.artists[0]?.name;
+
+  // Get artist's top tracks
+  const topTracks = await getSpotifyArtistTopTracks(accessToken, artistId, market);
+  const allTracks: SpotifyTrack[] = [...topTracks.tracks];
+
+  // Supplement with tracks from playlists containing artist name if needed
+  if (artistName && allTracks.length < count) {
+    const searchResult = await searchSpotify(accessToken, artistName, true);
+    const playlists = getRandomItems(searchResult.playlists.items, 3);
+    for (const playlist of playlists) {
+      const tracks = await getSpotifyUserPlaylistTracks(
+        accessToken,
+        playlist.id,
+        0,
+        10
+      );
+      allTracks.push(...tracks.items.map((item) => item.track));
+    }
+  }
+
+  // Shuffle and limit to count
+  const shuffled = getRandomItems(allTracks, allTracks.length);
+  const limited = shuffled.slice(0, count);
+
+  return completeDeckData(limited, accessToken);
 }
 
 async function getPlaylistTracks(
@@ -225,26 +252,12 @@ async function getRadioTracks(
     0,
     count
   );
-  const knownSongsCount = Math.max(1, Math.round(count * 0.2));
-  const recommendationCount = Math.max(1, Math.round(count * 0.8));
-
-  //TODO: Get a random set of count tracks from the playlist instead of just the first count.
   const playlistTracks = playlistTrackItems.items.map((item) => item.track);
 
-  const randomTracks = getRandomItems(playlistTracks, 5);
-  //Get 25 more tracks by way of spotify recommendation.
-  const recommendationTracks = await getSpotifyRecommendationsFromTracks(
-    accessToken,
-    randomTracks.map((track) => track.id),
-    recommendationCount
-  );
-  //Shuffling is pointless here because firestore by default orders data by id. If we want shuffling, it has to be implemented there.
-  const radioTracks = [
-    ...getRandomItems(playlistTracks, knownSongsCount),
-    ...recommendationTracks.tracks,
-  ];
+  // Shuffle the playlist tracks
+  const shuffled = getRandomItems(playlistTracks, playlistTracks.length);
 
-  return completeDeckData(radioTracks, accessToken);
+  return completeDeckData(shuffled, accessToken);
 }
 
 async function getVibeTracks(accessToken: string, vibe: string) {
@@ -367,11 +380,7 @@ async function completeDeckData(
         return null;
       }
     },
-    (deckItem) =>
-      deckItem !== null &&
-      deckItem !== undefined &&
-      deckItem.previewUrl !== null &&
-      deckItem.previewUrl !== undefined
+    (deckItem) => deckItem !== null && deckItem !== undefined
   );
 
   return completeTracksData;

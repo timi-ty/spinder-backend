@@ -5,11 +5,11 @@ import {
   SpotifyPlaylists,
   SpotifyTopTracks,
   SpotifyToken,
-  SpotifyRecommendations,
   SpotifySearchResult,
   SpotifySeveralArtists,
   SpotifyFollowedArtists,
   SpotifyPlaylistTracks,
+  SpotifyArtistTopTracks,
 } from "./spotify.model.js";
 import { spotifyLogger } from "../utils/logger.js";
 
@@ -218,14 +218,14 @@ async function getSpotifyUserTopTracks(
   }
 }
 
-async function getSpotifyRecommendationsFromTracks(
+async function getSpotifyArtistTopTracks(
   accessToken: string,
-  seedTracks: string[],
-  limit: number
-): Promise<SpotifyRecommendations> {
-  spotifyLogger.debug(`Getting user spotify recommendations.`);
-  const seedTrackIds = seedTracks.join();
-  var url = `https://api.spotify.com/v1/recommendations?limit=${limit}&seed_tracks=${seedTrackIds}`;
+  artistId: string,
+  market: string
+): Promise<SpotifyArtistTopTracks> {
+  spotifyLogger.debug(`Getting top tracks for artist ${artistId} in market ${market}`);
+  const url = `https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=${market}`;
+
   const response = await fetch(url, {
     headers: {
       Authorization: "Bearer " + accessToken,
@@ -233,35 +233,8 @@ async function getSpotifyRecommendationsFromTracks(
   });
 
   if (response.status === HttpStatusCode.Ok) {
-    const spotifyReocommendations: SpotifyRecommendations =
-      await response.json();
-    return spotifyReocommendations;
-  } else {
-    const spotifyErrorResponse: SpotifyErrorResponse = await response.json();
-    throw new Error(
-      `Status: ${spotifyErrorResponse.error.status}, Message: ${spotifyErrorResponse.error.message}`
-    );
-  }
-}
-
-async function getSpotifyRecommendationsFromArtists(
-  accessToken: string,
-  seedArtists: string[],
-  limit: number
-): Promise<SpotifyRecommendations> {
-  spotifyLogger.debug(`Getting user spotify recommendations.`);
-  const seedTrackIds = seedArtists.join();
-  var url = `https://api.spotify.com/v1/recommendations?limit=${limit}&seed_artists=${seedTrackIds}`;
-  const response = await fetch(url, {
-    headers: {
-      Authorization: "Bearer " + accessToken,
-    },
-  });
-
-  if (response.status === HttpStatusCode.Ok) {
-    const spotifyReocommendations: SpotifyRecommendations =
-      await response.json();
-    return spotifyReocommendations;
+    const spotifyArtistTopTracks: SpotifyArtistTopTracks = await response.json();
+    return spotifyArtistTopTracks;
   } else {
     const spotifyErrorResponse: SpotifyErrorResponse = await response.json();
     throw new Error(
@@ -469,14 +442,13 @@ export {
   getSpotifyUserProfile,
   getSpotifyUserPlaylists,
   getSpotifyUserTopTracks,
+  getSpotifyArtistTopTracks,
   addTracksToSpotifyUserPlaylist,
   removeTracksFromSpotifyUserPlaylist,
   addTracksToSpotifyUserSavedItems,
   removeTracksFromSpotifyUserSavedItems,
   requestSpotifyAccessToken,
   refreshSpotifyAccessToken,
-  getSpotifyRecommendationsFromTracks,
-  getSpotifyRecommendationsFromArtists,
   searchSpotify,
   getSpotifySeveralArtists,
   getSpotifyFollowedArtists,

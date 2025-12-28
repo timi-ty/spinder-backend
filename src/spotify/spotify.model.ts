@@ -239,17 +239,21 @@ interface PlaylistTrackItem {
   track: SpotifyTrack;
 }
 
+interface SpotifyArtistTopTracks {
+  tracks: SpotifyTrack[];
+}
+
 export {
   SpotifyErrorResponse,
   SpotifyUserProfileData,
   SpotifyPlaylists,
   SpotifyTopTracks,
   SpotifyToken,
-  SpotifyRecommendations,
   SpotifyTrack,
   SpotifySearchResult,
   SpotifySeveralArtists,
   SpotifyFollowedArtists,
   SpotifyArtistDetails,
   SpotifyPlaylistTracks,
+  SpotifyArtistTopTracks,
 };

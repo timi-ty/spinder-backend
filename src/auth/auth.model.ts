@@ -6,6 +6,7 @@ interface AuthToken {
 
 interface RenewedAuthData {
   userId: string;
+  spotifyAccessToken: string;
   spotifyAccessTokenExpiresIn: number;
   firebaseIdTokenExpiresIn: number;
 }
