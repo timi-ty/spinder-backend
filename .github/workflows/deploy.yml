@@ -56,8 +56,8 @@ jobs:
           echo "==> Backing up .env"
           cp "$DEPLOY_DIR/.env" /tmp/.env.backup
 
-          echo "==> Stopping PM2 process"
-          pm2 stop app || true
+          echo "==> Stopping service"
+          sudo systemctl stop spinder-backend || true
 
           echo "==> Cleaning deployment directory"
           cd "$DEPLOY_DIR"
@@ -73,14 +73,14 @@ jobs:
           cd "$DEPLOY_DIR"
           npm ci --omit=dev
 
-          echo "==> Restarting PM2"
-          pm2 restart app
+          echo "==> Starting service"
+          sudo systemctl start spinder-backend
 
           echo "==> Cleanup"
           rm -f /tmp/backend-deploy.tar.gz /tmp/.env.backup
 
           echo "==> Deployment complete!"
-          pm2 status
+          sudo systemctl status spinder-backend --no-pager | head -10
           DEPLOY_SCRIPT
 
       - name: Cleanup SSH key
