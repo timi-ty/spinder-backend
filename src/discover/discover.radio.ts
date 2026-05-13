@@ -1,42 +1,42 @@
 import { DiscoverSource } from "./discover.model.js";
 
-const afrobeatsApril2024: DiscoverSource = {
-  //https://open.spotify.com/playlist/17tLe3tCu3NGUisFViFRSi?si=4316485a78874f74
+const afroRadio: DiscoverSource = {
+  //https://open.spotify.com/playlist/17tLe3tCu3NGUisFViFRSi — user-curated "AFROBEATS LAB 2026" (118 tracks)
   type: "Radio",
   id: "17tLe3tCu3NGUisFViFRSi",
   name: "Spindr Afro Radio",
   image:
-    "https://img.etimg.com/thumb/msid-89919334,width-300,height-225,imgsize-35954,resizemode-75/radio.jpg", //Explore storing these app level images in firebase storage instead of at the frontend.
+    "https://image-cdn-ak.spotifycdn.com/image/ab67706c0000da8461cc722d96793fceeb52edb8",
 };
 
-const alteCruise: DiscoverSource = {
-  //https://open.spotify.com/playlist/37i9dQZF1DX5ja5oV6Kto0?si=bd37de31f7ab4e2d
+const alteRadio: DiscoverSource = {
+  //https://open.spotify.com/playlist/13fepRD2njUXVXylZJkmuA — user-curated "alté cruise" (415 tracks)
   type: "Radio",
-  id: "37i9dQZF1DX5ja5oV6Kto0",
+  id: "13fepRD2njUXVXylZJkmuA",
   name: "Spindr Alte Radio",
   image:
-    "https://img.etimg.com/thumb/msid-89919334,width-300,height-225,imgsize-35954,resizemode-75/radio.jpg", //Explore storing these app level images in firebase storage instead of at the frontend.
+    "https://image-cdn-ak.spotifycdn.com/image/ab67706c0000d72cb2ba33d31bf52a586b3bd1a1",
 };
 
-const hipHopMix: DiscoverSource = {
-  //https://open.spotify.com/playlist/37i9dQZF1EQnqst5TRi17F?si=9a0ea31575f940f6
+const hipHopRadio: DiscoverSource = {
+  //https://open.spotify.com/playlist/5TZkls9cEOzWDR6qCxwDot — user-curated "HipHop 2026" (332 tracks)
   type: "Radio",
-  id: "37i9dQZF1EQnqst5TRi17F",
+  id: "5TZkls9cEOzWDR6qCxwDot",
   name: "Spindr Hip Hop Radio",
   image:
-    "https://img.etimg.com/thumb/msid-89919334,width-300,height-225,imgsize-35954,resizemode-75/radio.jpg", //Explore storing these app level images in firebase storage instead of at the frontend.
+    "https://image-cdn-ak.spotifycdn.com/image/ab67706c0000d72c500b2d3b5b31f68ae1c74c13",
 };
 
-const indieMix: DiscoverSource = {
-  //https://open.spotify.com/playlist/37i9dQZF1EQqkOPvHGajmW?si=70779828c59543c8
+const indieRadio: DiscoverSource = {
+  //https://open.spotify.com/playlist/0qYAqOsMGJPntjVEKV5WOF — user-curated "indie rock" (207 tracks)
   type: "Radio",
-  id: "37i9dQZF1EQqkOPvHGajmW",
+  id: "0qYAqOsMGJPntjVEKV5WOF",
   name: "Spindr Indie Radio",
   image:
-    "https://img.etimg.com/thumb/msid-89919334,width-300,height-225,imgsize-35954,resizemode-75/radio.jpg", //Explore storing these app level images in firebase storage instead of at the frontend.
+    "https://mosaic.scdn.co/640/ab67616d00001e0288a4a43acf0d1901da9d2975ab67616d00001e029f1b21f21b13ff2d3e891f6bab67616d00001e02b1f8da74f225fa1225cdfaceab67616d00001e02fb1cb900d28642e668d77b12",
 };
 
-const spindrRadio = [afrobeatsApril2024, alteCruise, hipHopMix, indieMix];
+const spindrRadio = [afroRadio, alteRadio, hipHopRadio, indieRadio];
 
 function defaultAnonDiscoverSource(): DiscoverSource {
   return spindrRadio[Math.floor(Math.random() * spindrRadio.length)];

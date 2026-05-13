@@ -57,6 +57,7 @@ function filterOwnedSpotifyPlaylistsToDiscoverDestinations(
   userId: string
 ): DiscoverDestination[] {
   const userOwnedPlaylists = spotifyPlaylists.items
+    .filter((p): p is NonNullable<typeof p> => p !== null)
     .filter((playlist) => playlist.owner.id === userId)
     .map((playlist) => {
       const discoverDestinationPlaylist: DiscoverDestination = {

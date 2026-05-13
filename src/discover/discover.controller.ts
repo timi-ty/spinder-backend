@@ -192,17 +192,19 @@ async function searchDiscoverSources(
       };
       return artistSource;
     });
-    const playlistSources = spotifySearchResult.playlists.items.map(
-      (playlist) => {
+    const playlistSources = spotifySearchResult.playlists.items
+      // Spotify's playlist search returns null slots for editorial playlists
+      // since their Nov 2024 deprecation.
+      .filter((p): p is NonNullable<typeof p> => p !== null)
+      .map((playlist) => {
         const playlistSource: DiscoverSource = {
           type: "Playlist",
           id: playlist.id,
           name: playlist.name,
-          image: playlist.images[0].url ?? "",
+          image: playlist.images.length > 0 ? playlist.images[0].url : "",
         };
         return playlistSource;
-      }
-    );
+      });
     const spinderPeopleSources = (
       await stringSearchFirestoreCollection("users", "name", q as string)
     ).docs.map((doc) => {
