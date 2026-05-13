@@ -1,7 +1,7 @@
 import { DiscoverSource } from "./discover.model.js";
 
 const afroRadio: DiscoverSource = {
-  //https://open.spotify.com/playlist/17tLe3tCu3NGUisFViFRSi — user-curated "AFROBEATS LAB 2026" (118 tracks)
+  //https://open.spotify.com/playlist/17tLe3tCu3NGUisFViFRSi
   type: "Radio",
   id: "17tLe3tCu3NGUisFViFRSi",
   name: "Spindr Afro Radio",
@@ -10,7 +10,7 @@ const afroRadio: DiscoverSource = {
 };
 
 const alteRadio: DiscoverSource = {
-  //https://open.spotify.com/playlist/13fepRD2njUXVXylZJkmuA — user-curated "alté cruise" (415 tracks)
+  //https://open.spotify.com/playlist/13fepRD2njUXVXylZJkmuA
   type: "Radio",
   id: "13fepRD2njUXVXylZJkmuA",
   name: "Spindr Alte Radio",
@@ -19,7 +19,7 @@ const alteRadio: DiscoverSource = {
 };
 
 const hipHopRadio: DiscoverSource = {
-  //https://open.spotify.com/playlist/5TZkls9cEOzWDR6qCxwDot — user-curated "HipHop 2026" (332 tracks)
+  //https://open.spotify.com/playlist/5TZkls9cEOzWDR6qCxwDot
   type: "Radio",
   id: "5TZkls9cEOzWDR6qCxwDot",
   name: "Spindr Hip Hop Radio",
@@ -28,7 +28,7 @@ const hipHopRadio: DiscoverSource = {
 };
 
 const indieRadio: DiscoverSource = {
-  //https://open.spotify.com/playlist/0qYAqOsMGJPntjVEKV5WOF — user-curated "indie rock" (207 tracks)
+  //https://open.spotify.com/playlist/0qYAqOsMGJPntjVEKV5WOF
   type: "Radio",
   id: "0qYAqOsMGJPntjVEKV5WOF",
   name: "Spindr Indie Radio",

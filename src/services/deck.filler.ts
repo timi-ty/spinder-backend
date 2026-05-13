@@ -18,9 +18,36 @@ import {
 } from "../spotify/spotify.model.js";
 import { SpinderUserData } from "../user/user.model.js";
 import { getSpinderUserData } from "../user/user.utils.js";
-import { getRandomItems, mapAndFilter } from "../utils/utils.js";
+import { getRandomItems, mapAndFilter, notNull } from "../utils/utils.js";
 import { DeckItem, DeckItemArtist } from "./deck.model.js";
 import { isUserOnline } from "./deck.service.js";
+import { deckLogger } from "../utils/logger.js";
+
+async function fetchPlaylistTracks(
+  accessToken: string,
+  playlistIds: string[],
+  perPlaylistLimit: number,
+  warnContext: string
+): Promise<SpotifyTrack[]> {
+  const results = await Promise.allSettled(
+    playlistIds.map((id) =>
+      getSpotifyUserPlaylistTracks(accessToken, id, 0, perPlaylistLimit)
+    )
+  );
+  const tracks: SpotifyTrack[] = [];
+  results.forEach((result, i) => {
+    if (result.status === "fulfilled") {
+      tracks.push(
+        ...result.value.items.map((item) => item.track).filter(notNull)
+      );
+    } else {
+      deckLogger.warn(
+        `${warnContext}: skipping playlist ${playlistIds[i]} — ${result.reason}`
+      );
+    }
+  });
+  return tracks;
+}
 
 //For the frontend to work, the backend has to respond here with at least 2 tracks.
 //Makesure that if the source has less than 2 tracks, we fill it up with more from elsewhere.
@@ -82,7 +109,7 @@ async function getAnythingMeTracks(
   // Combine and shuffle
   const combined = [
     ...topTracks.items,
-    ...savedTracks.items.map((item) => item.track).filter(Boolean),
+    ...savedTracks.items.map((item) => item.track).filter(notNull),
   ];
   const shuffled = getRandomItems(combined, combined.length);
 
@@ -155,33 +182,14 @@ async function getMyPlaylistsTracks(
   //Get the user's playlists between with offset and limit.
   const playlists = await getSpotifyUserPlaylists(accessToken, offset, limit);
   //Select up to 5 random playlists from our playlists to get tracks from.
-  const randomPlaylists = getRandomItems(
-    playlists.items.filter((p): p is NonNullable<typeof p> => p !== null),
-    5
+  const randomPlaylists = getRandomItems(playlists.items.filter(notNull), 5);
+  //TODO: Get a random set of 10 tracks from each playlist instead of just the first 10.
+  const myPlaylistsracks = await fetchPlaylistTracks(
+    accessToken,
+    randomPlaylists.map((p) => p.id),
+    10,
+    "My Playlists"
   );
-  const myPlaylistsracks: SpotifyTrack[] = [];
-
-  for (var i = 0; i < randomPlaylists.length; i++) {
-    const playlist = randomPlaylists[i];
-    // /me/playlists may include followed editorial playlists, whose tracks
-    // endpoint 404s for dev-mode apps. Skip that one playlist rather than
-    // dropping the whole source.
-    try {
-      const playlistTracks = await getSpotifyUserPlaylistTracks(
-        accessToken,
-        playlist.id,
-        0,
-        10
-      ); //TODO: Get a random set of 10 tracks from the playlist instead of just the first 10.
-      myPlaylistsracks.push(
-        ...playlistTracks.items.map((item) => item.track).filter(Boolean)
-      );
-    } catch (error) {
-      console.warn(
-        `Skipping playlist ${playlist.id} (${playlist.name}) — ${error}`
-      );
-    }
-  }
 
   return completeDeckData(myPlaylistsracks, accessToken);
 }
@@ -220,32 +228,17 @@ async function getArtistTracks(
   // Supplement with tracks from playlists containing artist name if needed
   if (artistName && allTracks.length < count) {
     const searchResult = await searchSpotify(accessToken, artistName, true);
-    // Search results contain null slots for Spotify-curated playlists since
-    // their Nov 2024 deprecation; surviving picks may still be editorial and
-    // 404 on tracks fetch.
     const playlists = getRandomItems(
-      searchResult.playlists.items.filter(
-        (p): p is NonNullable<typeof p> => p !== null
-      ),
+      searchResult.playlists.items.filter(notNull),
       3
     );
-    for (const playlist of playlists) {
-      try {
-        const tracks = await getSpotifyUserPlaylistTracks(
-          accessToken,
-          playlist.id,
-          0,
-          10
-        );
-        allTracks.push(
-          ...tracks.items.map((item) => item.track).filter(Boolean)
-        );
-      } catch (error) {
-        console.warn(
-          `Artist supplement: skipping playlist ${playlist.id} — ${error}`
-        );
-      }
-    }
+    const supplementTracks = await fetchPlaylistTracks(
+      accessToken,
+      playlists.map((p) => p.id),
+      10,
+      `Artist supplement (${artistName})`
+    );
+    allTracks.push(...supplementTracks);
   }
 
   // Shuffle and limit to count
@@ -266,7 +259,9 @@ async function getPlaylistTracks(
     0,
     count
   ); //TODO: Get a random set of count tracks from the playlist instead of just the first count.
-  const playlistTracks = playlistTrackItems.items.map((item) => item.track).filter(Boolean);
+  const playlistTracks = playlistTrackItems.items
+    .map((item) => item.track)
+    .filter(notNull);
 
   return completeDeckData(playlistTracks, accessToken);
 }
@@ -282,7 +277,9 @@ async function getRadioTracks(
     0,
     count
   );
-  const playlistTracks = playlistTrackItems.items.map((item) => item.track).filter(Boolean);
+  const playlistTracks = playlistTrackItems.items
+    .map((item) => item.track)
+    .filter(notNull);
 
   // Shuffle the playlist tracks
   const shuffled = getRandomItems(playlistTracks, playlistTracks.length);
@@ -292,13 +289,8 @@ async function getRadioTracks(
 
 async function getVibeTracks(accessToken: string, vibe: string) {
   const spotifySearchResult = await searchSpotify(accessToken, vibe, true);
-
-  // Spotify's playlist search returns null slots for editorial playlists
-  // since their Nov 2024 deprecation. Drop the nulls before picking.
-  const playlistResults = spotifySearchResult.playlists.items.filter(
-    (p): p is NonNullable<typeof p> => p !== null
-  );
-  const vibePlaylists: NonNullable<(typeof playlistResults)[number]>[] = [];
+  const playlistResults = spotifySearchResult.playlists.items.filter(notNull);
+  const vibePlaylists: typeof playlistResults = [];
 
   //Try to get the top 4 playlist and 1 random playlist.
   for (var i = 0; i < 5; i++) {
@@ -314,28 +306,13 @@ async function getVibeTracks(accessToken: string, vibe: string) {
     }
   }
 
-  const vibePlaylistsracks: SpotifyTrack[] = [];
-
-  for (var j = 0; j < vibePlaylists.length; j++) {
-    const playlist = vibePlaylists[j];
-    // Surviving picks may still be editorial (search occasionally leaves them
-    // un-nulled). Skip a 404 on one playlist rather than abandoning the vibe.
-    try {
-      const playlistTracks = await getSpotifyUserPlaylistTracks(
-        accessToken,
-        playlist.id,
-        0,
-        10
-      ); //TODO: Get a random set of 10 tracks from the playlist instead of just the first 10.
-      vibePlaylistsracks.push(
-        ...playlistTracks.items.map((item) => item.track).filter(Boolean)
-      );
-    } catch (error) {
-      console.warn(
-        `Vibe "${vibe}": skipping playlist ${playlist.id} — ${error}`
-      );
-    }
-  }
+  //TODO: Get a random set of 10 tracks from each playlist instead of just the first 10.
+  const vibePlaylistsracks = await fetchPlaylistTracks(
+    accessToken,
+    vibePlaylists.map((p) => p.id),
+    10,
+    `Vibe "${vibe}"`
+  );
 
   return completeDeckData(vibePlaylistsracks, accessToken);
 }

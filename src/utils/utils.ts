@@ -50,6 +50,10 @@ function errorRedirect(req: Request, res: Response, redirectUrl: string) {
   res.status(HttpStatusCode.InternalServerError).redirect(redirectUrl);
 }
 
+function notNull<T>(value: T | null | undefined): value is T {
+  return value !== null && value !== undefined;
+}
+
 //Returns count number of random items from a list. If the list size is less than count, the result size is equal to the list size.
 function getRandomItems<T>(list: T[], count: number): T[] {
   const shuffled = list.slice().sort(() => 0.5 - Math.random());
@@ -98,4 +102,5 @@ export {
   getRandomItems,
   safeParseJson,
   mapAndFilter,
+  notNull,
 };

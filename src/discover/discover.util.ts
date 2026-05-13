@@ -6,6 +6,7 @@ import {
 import { discoverLogger } from "../utils/logger.js";
 import { SpotifyPlaylists } from "../spotify/spotify.model.js";
 import { getSpotifyUserPlaylists } from "../spotify/spotify.api.js";
+import { notNull } from "../utils/utils.js";
 
 async function getCountOrAllOwnedSpotifyPlaylistsAsDiscoverDestinations(
   accessToken: string,
@@ -57,7 +58,7 @@ function filterOwnedSpotifyPlaylistsToDiscoverDestinations(
   userId: string
 ): DiscoverDestination[] {
   const userOwnedPlaylists = spotifyPlaylists.items
-    .filter((p): p is NonNullable<typeof p> => p !== null)
+    .filter(notNull)
     .filter((playlist) => playlist.owner.id === userId)
     .map((playlist) => {
       const discoverDestinationPlaylist: DiscoverDestination = {

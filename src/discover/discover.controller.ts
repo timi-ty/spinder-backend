@@ -3,6 +3,7 @@ import {
   SpinderServerError,
   okResponse,
   safeParseJson,
+  notNull,
 } from "../utils/utils.js";
 import {
   DiscoverDestination,
@@ -193,9 +194,7 @@ async function searchDiscoverSources(
       return artistSource;
     });
     const playlistSources = spotifySearchResult.playlists.items
-      // Spotify's playlist search returns null slots for editorial playlists
-      // since their Nov 2024 deprecation.
-      .filter((p): p is NonNullable<typeof p> => p !== null)
+      .filter(notNull)
       .map((playlist) => {
         const playlistSource: DiscoverSource = {
           type: "Playlist",

@@ -82,9 +82,7 @@ interface SpotifyPlaylists {
   offset: number;
   previous: string;
   total: number;
-  // Spotify's playlist search returns null slots for editorial playlists
-  // since their Nov 2024 deprecation. /me/playlists doesn't, but typing
-  // the wire format honestly keeps callers from forgetting the guard.
+  // Search results may contain null slots; callers must filter.
   items: (PlaylistItem | null)[];
 }
 
