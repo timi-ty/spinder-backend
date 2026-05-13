@@ -41,8 +41,12 @@ async function fetchPlaylistTracks(
         ...result.value.items.map((item) => item.track).filter(notNull)
       );
     } else {
+      const reason =
+        result.reason instanceof Error
+          ? result.reason.message
+          : String(result.reason);
       deckLogger.warn(
-        `${warnContext}: skipping playlist ${playlistIds[i]} — ${result.reason}`
+        `${warnContext}: skipping playlist ${playlistIds[i]} — ${reason}`
       );
     }
   });

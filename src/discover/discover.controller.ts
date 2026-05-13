@@ -184,15 +184,17 @@ async function searchDiscoverSources(
       q as string,
       false
     );
-    const artistSources = spotifySearchResult.artists.items.map((artist) => {
-      const artistSource: DiscoverSource = {
-        type: "Artist",
-        id: artist.id,
-        name: artist.name,
-        image: artist.images.length > 0 ? artist.images[0].url : "",
-      };
-      return artistSource;
-    });
+    const artistSources = spotifySearchResult.artists.items
+      .filter(notNull)
+      .map((artist) => {
+        const artistSource: DiscoverSource = {
+          type: "Artist",
+          id: artist.id,
+          name: artist.name,
+          image: artist.images.length > 0 ? artist.images[0].url : "",
+        };
+        return artistSource;
+      });
     const playlistSources = spotifySearchResult.playlists.items
       .filter(notNull)
       .map((playlist) => {

@@ -181,7 +181,8 @@ interface Artists {
   offset: number;
   previous: null;
   total: number;
-  items: SpotifyArtistDetails[];
+  // Search results may contain null slots; callers must filter.
+  items: (SpotifyArtistDetails | null)[];
 }
 
 interface PlaylistItem {
