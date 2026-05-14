@@ -3,6 +3,7 @@ import {
   SpinderServerError,
   okResponse,
   safeParseJson,
+  notNull,
 } from "../utils/utils.js";
 import {
   DiscoverDestination,
@@ -183,26 +184,28 @@ async function searchDiscoverSources(
       q as string,
       false
     );
-    const artistSources = spotifySearchResult.artists.items.map((artist) => {
-      const artistSource: DiscoverSource = {
-        type: "Artist",
-        id: artist.id,
-        name: artist.name,
-        image: artist.images.length > 0 ? artist.images[0].url : "",
-      };
-      return artistSource;
-    });
-    const playlistSources = spotifySearchResult.playlists.items.map(
-      (playlist) => {
+    const artistSources = spotifySearchResult.artists.items
+      .filter(notNull)
+      .map((artist) => {
+        const artistSource: DiscoverSource = {
+          type: "Artist",
+          id: artist.id,
+          name: artist.name,
+          image: artist.images.length > 0 ? artist.images[0].url : "",
+        };
+        return artistSource;
+      });
+    const playlistSources = spotifySearchResult.playlists.items
+      .filter(notNull)
+      .map((playlist) => {
         const playlistSource: DiscoverSource = {
           type: "Playlist",
           id: playlist.id,
           name: playlist.name,
-          image: playlist.images[0].url ?? "",
+          image: playlist.images.length > 0 ? playlist.images[0].url : "",
         };
         return playlistSource;
-      }
-    );
+      });
     const spinderPeopleSources = (
       await stringSearchFirestoreCollection("users", "name", q as string)
     ).docs.map((doc) => {

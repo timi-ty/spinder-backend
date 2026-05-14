@@ -18,9 +18,40 @@ import {
 } from "../spotify/spotify.model.js";
 import { SpinderUserData } from "../user/user.model.js";
 import { getSpinderUserData } from "../user/user.utils.js";
-import { getRandomItems, mapAndFilter } from "../utils/utils.js";
+import { getRandomItems, mapAndFilter, notNull } from "../utils/utils.js";
 import { DeckItem, DeckItemArtist } from "./deck.model.js";
 import { isUserOnline } from "./deck.service.js";
+import { deckLogger } from "../utils/logger.js";
+
+async function fetchPlaylistTracks(
+  accessToken: string,
+  playlistIds: string[],
+  perPlaylistLimit: number,
+  warnContext: string
+): Promise<SpotifyTrack[]> {
+  const results = await Promise.allSettled(
+    playlistIds.map((id) =>
+      getSpotifyUserPlaylistTracks(accessToken, id, 0, perPlaylistLimit)
+    )
+  );
+  const tracks: SpotifyTrack[] = [];
+  results.forEach((result, i) => {
+    if (result.status === "fulfilled") {
+      tracks.push(
+        ...result.value.items.map((item) => item.track).filter(notNull)
+      );
+    } else {
+      const reason =
+        result.reason instanceof Error
+          ? result.reason.message
+          : String(result.reason);
+      deckLogger.warn(
+        `${warnContext}: skipping playlist ${playlistIds[i]} — ${reason}`
+      );
+    }
+  });
+  return tracks;
+}
 
 //For the frontend to work, the backend has to respond here with at least 2 tracks.
 //Makesure that if the source has less than 2 tracks, we fill it up with more from elsewhere.
@@ -82,7 +113,7 @@ async function getAnythingMeTracks(
   // Combine and shuffle
   const combined = [
     ...topTracks.items,
-    ...savedTracks.items.map((item) => item.track).filter(Boolean),
+    ...savedTracks.items.map((item) => item.track).filter(notNull),
   ];
   const shuffled = getRandomItems(combined, combined.length);
 
@@ -155,19 +186,14 @@ async function getMyPlaylistsTracks(
   //Get the user's playlists between with offset and limit.
   const playlists = await getSpotifyUserPlaylists(accessToken, offset, limit);
   //Select up to 5 random playlists from our playlists to get tracks from.
-  const randomPlaylists = getRandomItems(playlists.items, 5);
-  const myPlaylistsracks: SpotifyTrack[] = [];
-
-  for (var i = 0; i < randomPlaylists.length; i++) {
-    const playlist = randomPlaylists[i];
-    const playlistTracks = await getSpotifyUserPlaylistTracks(
-      accessToken,
-      playlist.id,
-      0,
-      10
-    ); //TODO: Get a random set of 10 tracks from the playlist instead of just the first 10.
-    myPlaylistsracks.push(...playlistTracks.items.map((item) => item.track).filter(Boolean));
-  }
+  const randomPlaylists = getRandomItems(playlists.items.filter(notNull), 5);
+  //TODO: Get a random set of 10 tracks from each playlist instead of just the first 10.
+  const myPlaylistsracks = await fetchPlaylistTracks(
+    accessToken,
+    randomPlaylists.map((p) => p.id),
+    10,
+    "My Playlists"
+  );
 
   return completeDeckData(myPlaylistsracks, accessToken);
 }
@@ -206,16 +232,17 @@ async function getArtistTracks(
   // Supplement with tracks from playlists containing artist name if needed
   if (artistName && allTracks.length < count) {
     const searchResult = await searchSpotify(accessToken, artistName, true);
-    const playlists = getRandomItems(searchResult.playlists.items, 3);
-    for (const playlist of playlists) {
-      const tracks = await getSpotifyUserPlaylistTracks(
-        accessToken,
-        playlist.id,
-        0,
-        10
-      );
-      allTracks.push(...tracks.items.map((item) => item.track).filter(Boolean));
-    }
+    const playlists = getRandomItems(
+      searchResult.playlists.items.filter(notNull),
+      3
+    );
+    const supplementTracks = await fetchPlaylistTracks(
+      accessToken,
+      playlists.map((p) => p.id),
+      10,
+      `Artist supplement (${artistName})`
+    );
+    allTracks.push(...supplementTracks);
   }
 
   // Shuffle and limit to count
@@ -236,7 +263,9 @@ async function getPlaylistTracks(
     0,
     count
   ); //TODO: Get a random set of count tracks from the playlist instead of just the first count.
-  const playlistTracks = playlistTrackItems.items.map((item) => item.track).filter(Boolean);
+  const playlistTracks = playlistTrackItems.items
+    .map((item) => item.track)
+    .filter(notNull);
 
   return completeDeckData(playlistTracks, accessToken);
 }
@@ -252,7 +281,9 @@ async function getRadioTracks(
     0,
     count
   );
-  const playlistTracks = playlistTrackItems.items.map((item) => item.track).filter(Boolean);
+  const playlistTracks = playlistTrackItems.items
+    .map((item) => item.track)
+    .filter(notNull);
 
   // Shuffle the playlist tracks
   const shuffled = getRandomItems(playlistTracks, playlistTracks.length);
@@ -262,9 +293,8 @@ async function getRadioTracks(
 
 async function getVibeTracks(accessToken: string, vibe: string) {
   const spotifySearchResult = await searchSpotify(accessToken, vibe, true);
-
-  const playlistResults = spotifySearchResult.playlists.items;
-  const vibePlaylists = [];
+  const playlistResults = spotifySearchResult.playlists.items.filter(notNull);
+  const vibePlaylists: typeof playlistResults = [];
 
   //Try to get the top 4 playlist and 1 random playlist.
   for (var i = 0; i < 5; i++) {
@@ -280,18 +310,13 @@ async function getVibeTracks(accessToken: string, vibe: string) {
     }
   }
 
-  const vibePlaylistsracks: SpotifyTrack[] = [];
-
-  for (var j = 0; j < vibePlaylists.length; j++) {
-    const playlist = vibePlaylists[j];
-    const playlistTracks = await getSpotifyUserPlaylistTracks(
-      accessToken,
-      playlist.id,
-      0,
-      10
-    ); //TODO: Get a random set of 10 tracks from the playlist instead of just the first 10.
-    vibePlaylistsracks.push(...playlistTracks.items.map((item) => item.track).filter(Boolean));
-  }
+  //TODO: Get a random set of 10 tracks from each playlist instead of just the first 10.
+  const vibePlaylistsracks = await fetchPlaylistTracks(
+    accessToken,
+    vibePlaylists.map((p) => p.id),
+    10,
+    `Vibe "${vibe}"`
+  );
 
   return completeDeckData(vibePlaylistsracks, accessToken);
 }

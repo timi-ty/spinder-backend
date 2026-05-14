@@ -82,7 +82,8 @@ interface SpotifyPlaylists {
   offset: number;
   previous: string;
   total: number;
-  items: PlaylistItem[];
+  // Search results may contain null slots; callers must filter.
+  items: (PlaylistItem | null)[];
 }
 
 interface SpotifyTrack {
@@ -180,7 +181,8 @@ interface Artists {
   offset: number;
   previous: null;
   total: number;
-  items: SpotifyArtistDetails[];
+  // Search results may contain null slots; callers must filter.
+  items: (SpotifyArtistDetails | null)[];
 }
 
 interface PlaylistItem {
